@@ -101,12 +101,12 @@
           export HBASE_LIBRARY_PATH={{ deploy_dir }}/hadoop/lib/native
           export HBASE_OPTS="$HBASE_OPTS --add-exports=java.base/jdk.internal.access=ALL-UNNAMED --add-exports=java.base/jdk.internal=ALL-UNNAMED --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=java.base/sun.security.pkcs=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/jdk.internal.access=ALL-UNNAMED"
 
-    - name: patch hbase
-      copy:
-        src: '{{ local_repo }}/hbase-server-2.4.11.jar'
-        dest: '{{ deploy_dir }}/hbase/lib'
-        backup: no
-        force: yes
+#    - name: patch hbase
+#      copy:
+#        src: '{{ local_repo }}/hbase-server-2.4.17.jar'
+#        dest: '{{ deploy_dir }}/hbase/lib'
+#        backup: no
+#        force: yes
 
     - name: link hadoop config
       file:
@@ -117,11 +117,46 @@
         - core-site.xml
         - hdfs-site.xml
 
-    - name: add epel-release repo
-      shell: 'sudo yum -y install epel-release && sudo yum makecache'
+    - name: Install EPEL Repository (CentOS)
+      yum:
+        name: epel-release
+        state: present
+      when: ansible_facts['distribution'] == "CentOS"
 
-    - name: install native libary
-      shell: 'sudo yum -y install snappy snappy-devel lz4 lz4-devel libzstd libzstd-devel'
+    - name: Update yum cache (CentOS)
+      yum:
+        name: '*'
+        state: latest
+      when: ansible_facts['distribution'] == "CentOS"
+
+    - name: Install libraries (CentOS)
+      yum:
+        name:
+          - snappy
+          - snappy-devel
+          - lz4
+          - lz4-devel
+          - libzstd
+          - libzstd-devel
+        state: present
+      when: ansible_facts['distribution'] == "CentOS"
+
+    - name: Update apt cache (Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_facts['distribution'] == "Ubuntu"
+
+    - name: Install libraries (Ubuntu)
+      apt:
+        name:
+          - libsnappy1v5
+          - libsnappy-dev
+          - liblz4-1
+          - liblz4-dev
+          - libzstd1
+          - libzstd-dev
+        state: present
+      when: ansible_facts['distribution'] == "Ubuntu"
 
     - name: check hadoop native
       shell: '{{ deploy_dir }}/hadoop/bin/hadoop checknative -a'
