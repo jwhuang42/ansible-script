@@ -29,10 +29,15 @@
             dest: '~/repo'
           when: not install_from_remote
 
-        - name: download package from remote repo
-          get_url:
-            url: "{{ item.link }}"
-            dest: "~/repo"
+        - name: Copy the download script to the remote machine
+          copy:
+            src: '{{ local_repo }}/download_util.sh'
+            dest: /tmp/download_util.sh
+            mode: '0755'
+          when: install_from_remote
+
+        - name: Download packages using the custom script
+          command: /tmp/download_util.sh "{{ item.link }}" "~/repo"
           with_items: "{{ package_info }}"
           when: install_from_remote
 
