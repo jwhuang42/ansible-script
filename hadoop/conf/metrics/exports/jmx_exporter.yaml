@@ -1,0 +1,28 @@
+---
+# https://github.com/prometheus/jmx_exporter
+startDelaySeconds: 5
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  # ignore service
+  - pattern: Hadoop<service=(\w+), name=([\w-.]+), sub=(\w+)><>([\w._]+)
+    name: $4
+    labels:
+      name: "$2"
+      group: "$3"
+    attrNameSnakeCase: true
+  # ignore service
+  - pattern: Hadoop<service=(\w+), name=(\w+)-([^<]+)><>([\w._]+)
+    name: $4
+    labels:
+      name: "$2"
+      entity: "$3"
+    attrNameSnakeCase: true
+  # ignore service
+  - pattern: Hadoop<service=(\w+), name=([^<]+)><>([\w._]+)
+    name: $3
+    labels:
+      name: "$2"
+    attrNameSnakeCase: true
+  - pattern: .+

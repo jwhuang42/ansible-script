@@ -1,0 +1,35 @@
+---
+startDelaySeconds: 5
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+blacklistObjectNames:
+  - "Hadoop:service=HBase,name=JvmMetrics*"
+  - "Hadoop:service=HBase,name=RegionServer,*"
+rules:
+  - pattern: Hadoop<service=HBase, name=Master, sub=(\w+)><>([\w._]+)_(num_ops|min|max|mean|median|25th_percentile|75th_percentile|90th_percentile|95th_percentile|98th_percentile|99th_percentile|99.9th_percentile)
+    name: $2
+    labels:
+      group: "$1"
+      stat: "$3"
+    attrNameSnakeCase: true
+  - pattern: Hadoop<service=HBase, name=Master, sub=(\w+)><>([\w._]+)
+    name: $2
+    labels:
+      group: "$1"
+    attrNameSnakeCase: true
+  - pattern: Hadoop<service=HBase, name=Master><>([\w._]+)
+    name: $1
+    attrNameSnakeCase: true
+  - pattern: Hadoop<service=HBase, name=(\w+), sub=(\w+)><>([\w._]+)
+    name: $3
+    labels:
+      name: "$1"
+      group: "$2"
+    attrNameSnakeCase: true
+  - pattern: Hadoop<service=HBase, name=(\w+)><>([\w._]+)
+    name: $2
+    labels:
+      name: "$1"
+    attrNameSnakeCase: true
+  - pattern: .+

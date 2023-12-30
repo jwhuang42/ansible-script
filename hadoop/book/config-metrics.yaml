@@ -1,0 +1,156 @@
+---
+- name: Install Metrics Package
+  hosts: "{{ groups['hadoop_nodes'] + groups['hbase_nodes'] }}"
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    install_from_remote: true
+    local_repo: '../repo/metrics'
+    remote_repo: '~/repo/metrics'
+    template_dir: ../conf/metrics
+    default_conf: jmx_exporter.yml
+
+    export_tmpl: '{{template_dir}}/exports'
+    target_tmpl: '{{template_dir}}/targets'
+
+    metrics_dir: '{{ deploy_dir }}/prometheus'
+    hadoop_home: '{{ deploy_dir }}/hadoop'
+    hbase_home: '{{ deploy_dir }}/hbase'
+
+    jmx_exporter: 'jmx_prometheus_javaagent-0.20.0.jar'
+    jmx_exporter_link: 'https://repo.maven.apache.org/maven2/io/prometheus/jmx/jmx_prometheus_javaagent/0.20.0/jmx_prometheus_javaagent-0.20.0.jar'
+    agent_path: '{{ metrics_dir }}/{{ jmx_exporter }}'
+
+    namenode_metrics_port: 7021
+    datanode_metrics_port: 7022
+    journalnode_metrics_port: 7023
+    resourcemanager_metrics_port: 7024
+    nodemanager_metrics_port: 7025
+    historyserver_metrics_port: 7026
+
+    hmaster_metrics_port: 7027
+    regionserver_metrics_port: 7028
+
+    host_to_ip: |
+      { {% for h in groups['nodes'] %} {% for n in hostvars[h]['hostname'].split() %}
+       "{{ n }}" : "{{ h }}" ,
+      {% endfor %} {% endfor %} }
+
+    hadoop_metrics:
+      - { env: 'HDFS_NAMENODE_OPTS', conf: 'namenode.yml', port: '{{namenode_metrics_port}}', }
+      - { env: 'HDFS_DATANODE_OPTS', conf: 'datanode.yml', port: '{{datanode_metrics_port}}' }
+      - { env: 'HDFS_JOURNALNODE_OPTS', conf: 'journalnode.yml', port: '{{journalnode_metrics_port}}' }
+      - { env: 'YARN_RESOURCEMANAGER_OPTS', conf: 'resourcemanager.yml', port: '{{resourcemanager_metrics_port}}' }
+      - { env: 'YARN_NODEMANAGER_OPTS', conf: 'nodemanager.yml', port: '{{nodemanager_metrics_port}}' }
+      - { env: 'MAPRED_HISTORYSERVER_OPTS', conf: 'historyserver.yml', port: '{{historyserver_metrics_port}}' }
+
+    hbase_metrics:
+      - { env: 'HBASE_MASTER_OPTS', conf: 'hmaster.yml', port: '{{hmaster_metrics_port}}' }
+      - { env: 'HBASE_REGIONSERVER_OPTS', conf: 'regionserver.yml', port: '{{regionserver_metrics_port}}' }
+
+  tasks:
+
+    - name: test connectivity
+      ping:
+
+    - name: copy or download metrics package
+      block:
+        - name: copy package from local repo
+          copy:
+            src: '{{ local_repo }}'
+            dest: '~/repo'
+          when: not install_from_remote
+
+        - name: Copy the download script to the remote machine
+          copy:
+            src: '{{ local_repo }}/download_util.sh'
+            dest: /tmp/download_util.sh
+            mode: '0755'
+          when: install_from_remote
+
+        - name: Download packages using the custom script
+          command: /tmp/download_util.sh "{{ jmx_exporter_link }}" "~/repo"
+          when: install_from_remote
+
+    - name: ensure metrics dir
+      become: true
+      file:
+        path: '{{ metrics_dir }}'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        state: directory
+
+    - name: install jmx exporter
+      copy:
+        src: '{{ remote_repo }}/{{ jmx_exporter }}'
+        dest: '{{ metrics_dir }}/{{ jmx_exporter }}'
+        remote_src: yes
+
+    - name: fetch exist exporter config
+      stat:
+        path: '{{ export_tmpl }}/{{ item }}'
+      with_items: "{{ (hadoop_metrics + hbase_metrics) | map(attribute='conf') | list }}"
+      register: metric_tmpl
+      run_once: yes
+      connection: local
+
+    - name: update hadoop exporter config
+      vars:
+        metrics_ip: '{{host_to_ip[inventory_hostname]}}'
+        metrics_port: '{{ item.port }}'
+        custom_tmpl: "{{ item.conf in (metric_tmpl | json_query('results[?stat.exists].item')) }}"
+      template:
+        src: '{{ export_tmpl }}/{{ item.conf if custom_tmpl else default_conf }}'
+        dest: '{{ metrics_dir }}/{{ item.conf }}'
+      with_items: '{{ hadoop_metrics }}'
+      when: inventory_hostname in groups['hadoop_nodes']
+
+    - name: update hbase exporter config
+      vars:
+        metrics_ip: '{{host_to_ip[inventory_hostname]}}'
+        metrics_port: '{{ item.port }}'
+        custom_tmpl: "{{ item.conf in (metric_tmpl | json_query('results[?stat.exists].item')) }}"
+      template:
+        src: '{{ export_tmpl }}/{{ item.conf if custom_tmpl else default_conf }}'
+        dest: '{{ metrics_dir }}/{{ item.conf }}'
+      with_items: '{{ hbase_metrics }}'
+      when: inventory_hostname in groups['hbase_nodes']
+
+    - name: config hadoop-env.sh
+      blockinfile:
+        dest: '{{ deploy_dir }}/hadoop/etc/hadoop/hadoop-env.sh'
+        marker: "# {mark} ANSIBLE MANAGED DEFAULT HADOOP METRIC ENV"
+        block: |
+          {% for m in hadoop_metrics %}
+          export {{m.env}}="-javaagent:{{agent_path}}={{m.port}}:{{metrics_dir}}/{{m.conf}} ${{m.env}}"
+          {% endfor %}
+      when: inventory_hostname in groups['hadoop_nodes']
+
+    - name: config hbase-env.sh
+      blockinfile:
+        dest: '{{ deploy_dir }}/hbase/conf/hbase-env.sh'
+        marker: "# {mark} ANSIBLE MANAGED DEFAULT HBASE METRIC ENV"
+        block: |
+          {% for m in hbase_metrics %}
+          export {{m.env}}="-javaagent:{{agent_path}}={{m.port}}:{{metrics_dir}}/{{m.conf}} ${{m.env}}"
+          {% endfor %}
+      when: inventory_hostname in groups['hbase_nodes']
+
+    - name: ensure generated target dir
+      file:
+        path: '/tmp/gen-prometheus-targets'
+        state: directory
+      run_once: yes
+      connection: local
+
+    - name: generate target config to /tmp/gen-prometheus-targets
+      template:
+        src: '{{ target_tmpl }}/{{ item }}'
+        dest: '/tmp/gen-prometheus-targets/{{ item }}'
+      with_items:
+        - hadoop-cluster.yml
+        - hbase-cluster.yml
+        - zk-cluster.yml
+      run_once: yes
+      connection: local
