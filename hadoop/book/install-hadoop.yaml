@@ -101,13 +101,6 @@
           export HBASE_LIBRARY_PATH={{ deploy_dir }}/hadoop/lib/native
           export HBASE_OPTS="$HBASE_OPTS --add-exports=java.base/jdk.internal.access=ALL-UNNAMED --add-exports=java.base/jdk.internal=ALL-UNNAMED --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=java.base/sun.security.pkcs=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/jdk.internal.access=ALL-UNNAMED"
 
-#    - name: patch hbase
-#      copy:
-#        src: '{{ local_repo }}/hbase-server-2.4.17.jar'
-#        dest: '{{ deploy_dir }}/hbase/lib'
-#        backup: no
-#        force: yes
-
     - name: link hadoop config
       file:
         state: link
