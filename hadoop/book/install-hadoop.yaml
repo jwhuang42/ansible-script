@@ -5,24 +5,36 @@
   any_errors_fatal: true
 
   vars:
+    install_from_remote: true
     local_repo: '../repo/hadoop'
     remote_repo: '~/repo/hadoop'
+    # NOTE: Change the `src` below to correct package in `local_repo` if install via local package.
     package_info:
-      - {src: 'OpenJDK17U-jdk_x64_linux_hotspot_17.0.2_8.tar.gz', dst: 'java/jdk-17.0.2+8', home: 'jdk17'}
-      - {src: 'OpenJDK8U-jdk_x64_linux_hotspot_8u322b06.tar.gz', dst: 'java/jdk8u322-b06', home: 'jdk8'}
-      - {src: 'apache-zookeeper-3.6.3-bin.tar.gz', dst: 'apache/zookeeper-3.6.3', home: 'zookeeper'}
-      - {src: 'hbase-2.4.11-bin.tar.gz', dst: 'apache/hbase-2.4.11',home: 'hbase'}
-      - {src: 'hadoop-3.2.3.tar.gz', dst: 'apache/hadoop-3.2.3', home: 'hadoop'}
+      - {src: 'openlogic-openjdk-17.0.9+9-linux-x64.tar.gz', dst: 'java/jdk-17.0.9+9', home: 'jdk17', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/17.0.9+9/openlogic-openjdk-17.0.9+9-linux-x64.tar.gz'}
+      - {src: 'openlogic-openjdk-8u392-b08-linux-x64.tar.gz', dst: 'java/jdk8u392-b08', home: 'jdk8', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/8u392-b08/openlogic-openjdk-8u392-b08-linux-x64.tar.gz'}
+      - {src: 'apache-zookeeper-3.8.3-bin.tar.gz', dst: 'apache/zookeeper-3.8.3', home: 'zookeeper', link: 'https://archive.apache.org/dist/zookeeper/zookeeper-3.8.3/apache-zookeeper-3.8.3-bin.tar.gz'}
+      - {src: 'hbase-2.4.17-bin.tar.gz', dst: 'apache/hbase-2.4.17',home: 'hbase', link: 'https://archive.apache.org/dist/hbase/2.4.17/hbase-2.4.17-bin.tar.gz'}
+      - {src: 'hadoop-3.3.6.tar.gz', dst: 'apache/hadoop-3.3.6', home: 'hadoop', link: 'https://archive.apache.org/dist/hadoop/core/hadoop-3.3.6/hadoop-3.3.6.tar.gz'}
 
   tasks:
 
     - name: test connectivity
       ping:
 
-    - name: copy hadoop package
-      copy:
-          src: '{{ local_repo }}'
-          dest: '~/repo'
+    - name: copy or download hadoop package
+      block:
+        - name: copy package from local repo
+          copy:
+            src: '{{ local_repo }}'
+            dest: '~/repo'
+          when: not install_from_remote
+
+        - name: download package from remote repo
+          get_url:
+            url: "{{ item.link }}"
+            dest: "~/repo"
+          with_items: "{{ package_info }}"
+          when: install_from_remote
 
     - name: prepare directory
       become: true # become root
