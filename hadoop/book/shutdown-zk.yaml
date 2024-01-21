@@ -1,0 +1,13 @@
+---
+- name: Shutdown Zookeeper
+  hosts: zk_nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    zk_home: '{{ deploy_dir }}/zookeeper'
+
+  tasks:
+    - name: shutdown zookeeper server
+      shell:
+        cmd: '{{ zk_home }}/bin/zkServer.sh stop'

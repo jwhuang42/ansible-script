@@ -43,6 +43,10 @@
       notify:
         - Restart zookeeper service
 
+    - name: Get zookeeper status
+      shell:
+        cmd: '{{ zk_home }}/bin/zkServer.sh status'
+
   handlers:
     - name: Restart zookeeper service
       shell:
