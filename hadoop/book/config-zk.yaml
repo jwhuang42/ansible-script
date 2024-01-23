@@ -33,21 +33,16 @@
         marker: "# {mark} ANSIBLE MANAGED ZK ENV"
         block: |
           export SERVER_JVMFLAGS="-Xmx1G -XX:+UseShenandoahGC -XX:+AlwaysPreTouch -Djute.maxbuffer=8388608"
-      notify:
-        - Restart zookeeper service
 
     - name: Update zookeeper config
       template:
         src: '{{ template_dir }}/zoo.cfg'
         dest: '{{ zk_home }}/conf'
-      notify:
-        - Restart zookeeper service
+
+    - name: Restart zookeeper service
+      shell:
+        cmd: '{{ zk_home }}/bin/zkServer.sh restart'
 
     - name: Get zookeeper status
       shell:
         cmd: '{{ zk_home }}/bin/zkServer.sh status'
-
-  handlers:
-    - name: Restart zookeeper service
-      shell:
-        cmd: '{{ zk_home }}/bin/zkServer.sh restart'
