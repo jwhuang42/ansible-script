@@ -112,118 +112,25 @@
         - Note: Native compression test would fail since some files are not configured yet. This shouldn't affect Hadoop
           initialization though.
 
-## Hadoop Initialization
+## Hadoop Provision
 
-**Note**: Below is the step-by-step guide on how to start a Hadoop HA cluster. If the verification fail at any step,
-find if there is a configuration issue in the previous steps.
+### Start Hadoop cluster for the first time
 
-At any time some processes have problem starting on some nodes, or you'd like to try again, delete everything inside
-the `/data/hadoop` directory on each node
-and restart everything from `Hadoop Initialization` section (i.e. treat this initialization guide as a "transaction").
+**Note**: If this script failed in the middle, you would need to delete the hadoop data directory and undone zk format.
+So far we only have script to delete
+Hadoop data directory: `ansible-playbook book/remove-all-hadoop-data.yaml -vv`
 
-If everything works fine (i.e. vm config, network config, ssh config, user config) and you are unable to locate the bug,
-capture the full error/log message and report the issue.
-
-1. Verify the `QuorumPeerMain` process on each `[zk_nodes]` has started.
-
-   ```
-   ansible zk_nodes -m shell -a '. /etc/profile && jps | grep QuorumPeerMain'
-   
-   # Confirm there is one and only one leader, and the version matches what's specified in `book/install-hadoop.yaml`
-   ansible zk_nodes -m shell -a '. /etc/profile && /opt/zookeeper/bin/zkServer.sh version && /opt/zookeeper/bin/zkServer.sh status'
-   ```
-
-### Start HDFS
-
-1. Start `JournalNode` service on all `[journalnodes]`.
-
-   ```
-   ansible journalnodes -m shell -a '. /etc/profile && nohup hdfs --daemon start journalnode'
-
-   # Check if JournalNode process exists on each node specified in hosts-->[journalnodes] section
-   ansible journalnodes -m shell -a '. /etc/profile && jps | grep JournalNode'
-   ```
-
-1. Format the namenode with id `nn1` and start the process.
-
-   ```
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && hdfs namenode -format'
-
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && nohup hdfs --daemon start namenode'
-   
-   # Check if the NameNode process exists on first [namenodes] (i.e. node in hosts-->[namenodes][0])
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && jps | grep NameNode'
-   ```
-
-1. For rest of the namenodes, sync the metadata with `nn1` and start the process.
-
-   ```
-   ansible 'namenodes[1:]' -m shell -a '. /etc/profile && hdfs namenode -bootstrapStandby'
-   
-   ansible 'namenodes[1:]' -m shell -a '. /etc/profile && nohup hdfs --daemon start namenode'
-   
-   # Check if the NameNode process exists on rest of the [namenodes] (i.e. nodes in hosts-->[namenodes][1:])
-   ansible 'namenodes[1:]' -m shell -a '. /etc/profile && jps | grep NameNode'
-   ```
-
-1. Start the DataNode process on each `hosts-->[datanodes]`
-
-   ```
-   ansible datanodes -m shell -a '. /etc/profile && nohup hdfs --daemon start datanode'
-   
-   # Check if the DataNode process exists on each hosts-->[datanodes] section.
-   ansible datanodes -m shell -a '. /etc/profile && jps | grep DataNode'
-   ```
-
-1. Check if both namenodes are in the `standby` state. (Can be executed on any namenode)
-
-   ```
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && hdfs haadmin -getServiceState nn1'
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && hdfs haadmin -getServiceState nn2'
-   ```
-
-1. Format the state of `DFSZKFailoverController` on zookeeper.
-
-   ```
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && hdfs zkfc -formatZK'
-   ```
-
-1. Restart the HDFS cluster.
-
-   ```
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && stop-dfs.sh'
-   
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && start-dfs.sh'
-   
-   # Check if the `DFSZKFailoverController` process exists on each namenode
-   ansible 'namenodes' -m shell -a '. /etc/profile && jps | grep FailoverController'
-   ```
-
-1. Check if one of the namenodes is in `active` state.
+Below is the main script to format and start the cluster for the first time.
 
 ```
-ansible 'namenodes[0]' -m shell -a '. /etc/profile && hdfs haadmin -getServiceState nn1'
-ansible 'namenodes[0]' -m shell -a '. /etc/profile && hdfs haadmin -getServiceState nn2'
+ansible-playbook book/provision-hadoop.yaml -vv
 ```
 
-### Start YARN
+### Start Hadoop cluster from the shutdown state
 
-1. Run script and check if ResourceManager and NodeManager processes are properly start.
-
-   ```
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && start-yarn.sh'
-   
-   # Check if both `ResourceManager` and `NodeManager` exist on specified nodes.
-   ansible 'hadoop_nodes' -m shell -a '. /etc/profile && jps | grep Manager'
-   ```
-
-1. Check the state of `ResourceManager` and locate the active one (should only have one)
-
-   ```
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && yarn rmadmin -getServiceState rm1'
-   
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && yarn rmadmin -getServiceState rm2'
-   ```
+```
+ansible-playbook book/start-hadoop.yaml -vv
+```
 
 ### Verify the Web Interface
 
@@ -243,10 +150,7 @@ the ansible control node from the local machine.
 **Note**: This is probably not needed for production environment, but you may use this during cluster set up test or
 upgrade.
 
-The following shutdown guide will close everything starting from a Hadoop cluster with HA YARN and HA HDFS.
-you can use a subset of the command to shut down components as needed, just make sure **the commands are executed in the
-small to large order**.
-Otherwise, the data might be corrupted!
+The following shutdown guide will close Hadoop cluster with HA YARN and HA HDFS.
 
 1. Check the running processes.
    ```
@@ -283,36 +187,14 @@ Otherwise, the data might be corrupted!
    # 2015 DataNode
    ```
 
-1. Shutdown the YARN cluster (Make sure all jobs have completed first before running this)
+1. Shutdown the Hadoop cluster (including all Hadoop processes)
 
    ```
-   # Remove all `ResourceManager` and `NodeManager` processes
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && stop-yarn.sh'
+   ansible-playbook book/shutdown-hadoop.yaml -vv
    ```
 
-1. Shutdown the HDFS cluster
+1. Shutdown the zookeeper cluster in a separate step
 
    ```
-   # Remove all `NameNode` and `DataNode` processes
-   ansible 'namenodes[0]' -m shell -a '. /etc/profile && stop-dfs.sh'
-   ```
-
-1. Shutdown the JournalNode processes
-
-   ```
-   # Remove all `JournalNode` processes
-   ansible journalnodes -m shell -a '. /etc/profile && nohup hdfs --daemon stop journalnode'
-   ```
-
-1. Shutdown the zookeeper cluster
-
-   ```
-   # Remove all `QuorumPeerMain` processes
-   ansible zk_nodes -m shell -a '. /etc/profile && /opt/zookeeper/bin/zkServer.sh stop'
-   ```
-
-1. Check all processes are properly closed (jps should be the only left process on each node)
-
-   ```
-   ansible 'nodes' -m shell -a '. /etc/profile && jps'
+   ansible-playbook book/shutdown-zk.yaml -vv
    ```

@@ -1,0 +1,31 @@
+---
+- name: Shutdown Hadoop Cluster
+  hosts: hadoop_nodes
+  gather_facts: no
+
+  vars:
+    zk_home: '{{ deploy_dir }}/zookeeper'
+
+  tasks:
+    - name: Determine the first host in the group
+      set_fact:
+        first_nn_host: "{{ groups['namenodes'][0] }}"
+
+    - name: Check running processes before shutdown
+      shell: ". /etc/profile && jps"
+
+    - name: Stop YARN services on NameNodes
+      shell: ". /etc/profile && stop-yarn.sh"
+      when: inventory_hostname == first_nn_host
+
+    - name: Stop HDFS services on NameNodes
+      shell: ". /etc/profile && stop-dfs.sh"
+      when: inventory_hostname == first_nn_host
+
+    - name: Stop JournalNode processes
+      shell: ". /etc/profile && nohup hdfs --daemon stop journalnode"
+      when: inventory_hostname in groups['journalnodes']
+      ignore_errors: yes
+
+    - name: Check running processes after shutdown
+      shell: ". /etc/profile && jps"

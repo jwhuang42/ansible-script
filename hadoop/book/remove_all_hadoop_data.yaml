@@ -1,0 +1,11 @@
+---
+- name: Remove Hadoop Data Files Playbook
+  hosts: hadoop_nodes
+  vars:
+    hadoop_data_dir: '{{ data_dir }}/hadoop'
+
+  tasks:
+    - name: Remove Hadoop data files
+      file:
+        path: "{{ hadoop_data_dir }}"
+        state: absent

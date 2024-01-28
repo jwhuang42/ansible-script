@@ -1,0 +1,156 @@
+---
+- name: Hadoop Cluster Deployment
+  hosts: hadoop_nodes:zk_nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    zk_home: '{{ deploy_dir }}/zookeeper'
+
+  tasks:
+
+    - name: Verify QuorumPeerMain process exist on each zk_node
+      block:
+        - name: Check for QuorumPeerMain process
+          shell: ". /etc/profile && jps | grep QuorumPeerMain"
+          register: quorum_check
+          failed_when: quorum_check.stdout == ""
+      rescue:
+        - name: Restart zkServer if QuorumPeerMain is not found
+          shell: ". /etc/profile && {{zk_home}}/bin/zkServer.sh restart && sleep 3"
+      when: inventory_hostname in groups['zk_nodes']
+
+    - name: Get ZooKeeper version and status
+      shell: ". /etc/profile && {{zk_home}}/bin/zkServer.sh version && {{zk_home}}/bin/zkServer.sh status"
+      when: inventory_hostname in groups['zk_nodes']
+
+    - name: Determine the first namenode host in the namenodes group
+      set_fact:
+        first_nn_host: "{{ groups['namenodes'][0] }}"
+
+    - name: Format ZooKeeper Failover Controller
+      shell: ". /etc/profile && hdfs zkfc -formatZK"
+      when: inventory_hostname == first_nn_host
+
+    - name: Start all journalnodes
+      shell: ". /etc/profile && nohup hdfs --daemon start journalnode"
+      when: inventory_hostname in groups['journalnodes']
+
+    - name: Check JournalNode process exist on all nodes in journalnodes group
+      shell: ". /etc/profile && jps | grep JournalNode"
+      register: journalnode_check
+      failed_when: journalnode_check.stdout == ""
+      when: inventory_hostname in groups['journalnodes']
+
+    - name: Format namenode on the first node within namenodes group
+      shell: ". /etc/profile && hdfs namenode -format"
+      when: inventory_hostname == first_nn_host
+
+    - name: Start the first namenode in the namenodes group
+      shell: ". /etc/profile && nohup hdfs --daemon start namenode"
+      when: inventory_hostname == first_nn_host
+
+    - name: Check NameNode process exist on the first namenode in the namenodes group
+      shell: ". /etc/profile && jps | grep NameNode"
+      register: namenode_check
+      failed_when: namenode_check.stdout == ""
+      when: inventory_hostname == first_nn_host
+
+    - name: Bootstrap standby namenode on remaining namenodes
+      shell: ". /etc/profile && hdfs namenode -bootstrapStandby"
+      when:
+        - inventory_hostname in groups['namenodes']
+        - inventory_hostname != first_nn_host
+
+    - name: Start namenode on remaining namenodes
+      shell: ". /etc/profile && nohup hdfs --daemon start namenode"
+      when:
+        - inventory_hostname in groups['namenodes']
+        - inventory_hostname != first_nn_host
+
+    - name: Check NameNode process on remaining namenodes
+      shell: ". /etc/profile && jps | grep NameNode"
+      register: namenode_check
+      failed_when: namenode_check.stdout == ""
+      when:
+        - inventory_hostname in groups['namenodes']
+        - inventory_hostname != first_nn_host
+
+    - name: Start datanode on datanodes
+      shell: ". /etc/profile && nohup hdfs --daemon start datanode"
+      when: inventory_hostname in groups['datanodes']
+
+    - name: Check DataNode process on datanodes
+      shell: ". /etc/profile && jps | grep DataNode"
+      register: datanode_check
+      failed_when: datanode_check.stdout == ""
+      when: inventory_hostname in groups['datanodes']
+
+    - name: Check standby state of namenodes
+      shell: ". /etc/profile && hdfs haadmin -getServiceState nn1 && hdfs haadmin -getServiceState nn2"
+      when: inventory_hostname in groups['namenodes']
+
+    - name: Stop HDFS
+      shell: ". /etc/profile && stop-dfs.sh"
+      when: inventory_hostname == first_nn_host
+
+    - name: Start HDFS
+      shell: ". /etc/profile && start-dfs.sh"
+      when: inventory_hostname == first_nn_host
+
+    - name: Check DFSZKFailoverController process on namenodes
+      shell: ". /etc/profile && jps | grep FailoverController"
+      register: zk_controller_check
+      failed_when: zk_controller_check.stdout == ""
+      when: inventory_hostname in groups['namenodes']
+
+    - name: Gather state of each NameNode
+      shell: ". /etc/profile && hdfs haadmin -getServiceState {{ hostvars[item]['id'] }}"
+      register: namenode_states
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['namenodes'] }}"
+      when: inventory_hostname == first_nn_host
+
+    - name: Check that only one NameNode is active
+      assert:
+        that:
+          - namenode_states.results | selectattr('stdout', 'equalto', 'active') | list | count == 1
+        fail_msg: "Assertion failed: There should be exactly one active NameNode"
+        success_msg: "One active NameNode verified"
+      when: inventory_hostname == first_nn_host
+
+    - name: Start YARN
+      shell: ". /etc/profile && start-yarn.sh"
+      when: inventory_hostname == first_nn_host
+
+    - name: Check ResourceManager process on ResourceManager nodes
+      shell: ". /etc/profile && jps | grep ResourceManager"
+      register: resourcemanager_check
+      failed_when: resourcemanager_check.stdout == ""
+      when: inventory_hostname in groups['resourcemanagers']
+
+    - name: Check NodeManager process on Hadoop nodes
+      shell: ". /etc/profile && jps | grep NodeManager"
+      register: nodemanager_check
+      failed_when: nodemanager_check.stdout == ""
+
+    - name: Check YARN ResourceManager service state on each node
+      shell: ". /etc/profile && yarn rmadmin -getServiceState {{ hostvars[item]['id'] }}"
+      register: rm_service_state
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups['resourcemanagers'] }}"
+      when: inventory_hostname == first_nn_host
+
+    - name: Check that only one ResourceManager is active
+      assert:
+        that:
+          - rm_service_state.results | selectattr('stdout', 'equalto', 'active') | list | count == 1
+        fail_msg: "Assertion failed: There should be exactly one active ResourceManager"
+        success_msg: "One active ResourceManager verified"
+      when: inventory_hostname == first_nn_host
+
+    - name: Print success message on the local control node
+      local_action:
+        module: debug
+        msg: "The Hadoop HA cluster has successfully provisioned!"
+      run_once: true
