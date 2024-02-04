@@ -18,7 +18,7 @@
    - Check the generated public key: `cat ~/.ssh/<keyname>.pub`
    - On each ansible controlled machine (i.e. also called ansible host), run the following command, replace
      the `<pub_key_string>`
-     with real key:
+     with real key:\
      **Note**: you can
      use [ssh-copy-id](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#copying-your-public-ssh-key-to-a-server-with-ssh-copy-id)
      instead if you have password access to other VMs.
