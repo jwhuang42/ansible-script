@@ -17,8 +17,8 @@ mkdir -p "$DESTINATION_DIR"
 
 # Check if the file already exists
 if [ ! -f "$FULL_DESTINATION_PATH" ]; then
-    # Download the file with wget, showing a progress bar
-    wget -O "$FULL_DESTINATION_PATH" --progress=bar:force "$URL"
+    # Download the file with wget
+    wget -q -O "$FULL_DESTINATION_PATH" "$URL"
 else
     echo "File '$FULL_DESTINATION_PATH' already exists. Download skipped."
 fi

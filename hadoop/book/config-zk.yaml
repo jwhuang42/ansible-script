@@ -41,7 +41,7 @@
 
     - name: Restart zookeeper service
       shell:
-        cmd: '{{ zk_home }}/bin/zkServer.sh restart'
+        cmd: '{{ zk_home }}/bin/zkServer.sh restart && sleep 3'
 
     - name: Get zookeeper status
       shell:
