@@ -56,6 +56,8 @@
    1. Check and configure the ansible hosts file.
     - Change the VM IP addresses to the real one for Hadoop deployment under the `[nodes]` and `[zk_nodes]` section.
     - Add the IPs of the VMs you intend to install Hadoop under the `[newborn]` section.
+   - Update the `ansible_ssh_private_key_file` under the `[hadoop_nodes]` section (points to the same IdentityFile in
+     the .ssh/config).
 
 ## One line Deployment
 
