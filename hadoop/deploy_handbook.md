@@ -18,9 +18,13 @@
    - Check the generated public key: `cat ~/.ssh/<keyname>.pub`
    - On each ansible controlled machine (i.e. also called ansible host), run the following command, replace
      the `<pub_key_string>`
-     with real key:(Note: you can
+     with real key:
+     **Note**: you can
      use [ssh-copy-id](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#copying-your-public-ssh-key-to-a-server-with-ssh-copy-id)
-     instead if you have password access to other VMs)
+     instead if you have password access to other VMs.
+     This guide assume you already have root access, and the public key is copied to the root directory of each
+     controlled machine.
+     Configure your accessibility first if needed.
      ```
      cat <<EOF >> ~/.ssh/authorized_keys
      <pub_key_string>
@@ -56,6 +60,8 @@
    1. Check and configure the ansible hosts file.
     - Change the VM IP addresses to the real one for Hadoop deployment under the `[nodes]` and `[zk_nodes]` section.
     - Add the IPs of the VMs you intend to install Hadoop under the `[newborn]` section.
+   - Update the `ansible_ssh_private_key_file` under the `[hadoop_nodes]` section (points to the same IdentityFile in
+     the .ssh/config).
 
 ## One line Deployment
 
