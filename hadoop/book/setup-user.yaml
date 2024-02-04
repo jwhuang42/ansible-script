@@ -1,0 +1,77 @@
+---
+- name: Set Up New User
+  hosts: nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    new_user: admin
+
+  tasks:
+
+    - name: test connectivity
+      ping:
+
+    - name: Check if '{{ new_user }}' user exists
+      command: id {{ new_user }}
+      register: user_check
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Create '{{ new_user }}' user with sudo privileges and no password for sudo
+      block:
+        - name: Ensure '{{ new_user }}' group exists
+          group:
+            name: '{{ new_user }}'
+            state: present
+
+        - name: Add '{{ new_user }}' user
+          user:
+            name: '{{ new_user }}'
+            group: sudo
+            groups: '{{ new_user }}'
+            shell: /bin/bash
+            create_home: yes
+            system: no
+
+        - name: Allow '{{ new_user }}' user to execute sudo commands without a password
+          lineinfile:
+            path: /etc/sudoers
+            line: '{{ new_user }} ALL=(ALL) NOPASSWD: ALL'
+            validate: '/usr/sbin/visudo -cf %s'
+      when: user_check.rc != 0
+
+    - name: Ensure '{{ new_user }}' .ssh directory exists
+      file:
+        path: "/home/{{ new_user }}/.ssh"
+        state: directory
+        owner: "{{ new_user }}"
+        group: sudo
+        mode: '0700'
+
+    - name: Slurp the root's authorized_keys
+      slurp:
+        src: "/root/.ssh/authorized_keys"
+      register: root_authorized_keys
+
+    - name: Write authorized_keys for '{{ new_user }}'
+      copy:
+        dest: "/home/{{ new_user }}/.ssh/authorized_keys"
+        content: "{{ root_authorized_keys['content'] | b64decode }}"
+        owner: "{{ new_user }}"
+        group: "{{ new_user }}"
+        mode: '0600'
+
+    - name: Disable StrictHostKeyChecking in SSH config
+      lineinfile:
+        path: /etc/ssh/ssh_config
+        regexp: '^#?StrictHostKeyChecking'
+        line: 'StrictHostKeyChecking no'
+        create: yes
+      notify: restart ssh
+
+  handlers:
+    - name: restart ssh
+      service:
+        name: ssh
+        state: restarted
