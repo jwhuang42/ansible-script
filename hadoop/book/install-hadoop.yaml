@@ -20,6 +20,7 @@
       - {src: 'apache-zookeeper-3.8.3-bin.tar.gz', dst: 'apache/zookeeper-3.8.3', home: 'zookeeper', link: 'https://archive.apache.org/dist/zookeeper/zookeeper-3.8.3/apache-zookeeper-3.8.3-bin.tar.gz'}
       - {src: 'hbase-2.4.17-bin.tar.gz', dst: 'apache/hbase-2.4.17',home: 'hbase', link: 'https://archive.apache.org/dist/hbase/2.4.17/hbase-2.4.17-bin.tar.gz'}
       - {src: 'hadoop-3.3.6.tar.gz', dst: 'apache/hadoop-3.3.6', home: 'hadoop', link: 'https://archive.apache.org/dist/hadoop/core/hadoop-3.3.6/hadoop-3.3.6.tar.gz'}
+      - { src: 'spark-3.4.2-bin-hadoop3.tgz', dst: 'apache/spark-3.4.2', home: 'spark', link: 'https://archive.apache.org/dist/spark/spark-3.4.2/spark-3.4.2-bin-hadoop3.tgz' }
 
   tasks:
 
@@ -85,7 +86,8 @@
           export JAVA_HOME={{ deploy_dir }}/jdk8
           export HADOOP_HOME={{ deploy_dir }}/hadoop
           export HBASE_HOME={{ deploy_dir }}/hbase
-          export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$PATH
+          export SPARK_HOME={{ deploy_dir }}/spark
+          export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$SPARK_HOME/bin:$PATH
 
     - name: config zkEnv.sh
       lineinfile:
@@ -110,6 +112,15 @@
           export HBASE_MANAGES_ZK=false
           export HBASE_LIBRARY_PATH={{ deploy_dir }}/hadoop/lib/native
           export HBASE_OPTS="$HBASE_OPTS --add-exports=java.base/jdk.internal.access=ALL-UNNAMED --add-exports=java.base/jdk.internal=ALL-UNNAMED --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=java.base/sun.security.pkcs=ALL-UNNAMED --add-exports=java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/jdk.internal=ALL-UNNAMED --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-opens java.base/jdk.internal.access=ALL-UNNAMED"
+
+    - name: Create or overwrite spark-env.sh with desired environment variables
+      copy:
+        dest: "{{ deploy_dir }}/spark/conf/spark-env.sh"
+        content: |
+          export JAVA_HOME={{ deploy_dir }}/jdk8
+          export HADOOP_CONF_DIR={{ deploy_dir }}/hadoop/etc/hadoop
+          export YARN_CONF_DIR={{ deploy_dir }}/hadoop/etc/hadoop
+        mode: '0755'
 
     - name: link hadoop config
       file:

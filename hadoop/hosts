@@ -4,6 +4,12 @@
 192.168.62.143
 192.168.62.144
 
+[ozonenewborn]
+192.168.62.141
+192.168.62.142
+192.168.62.143
+192.168.62.144
+
 [nodes]
 192.168.62.141 hostname='my.hadoop1 my.hbase1 my.zk1'
 192.168.62.142 hostname='my.hadoop2 my.hbase2 my.zk2'

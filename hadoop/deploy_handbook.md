@@ -66,7 +66,11 @@
 ## One line Deployment
 
 You can execute the single command `./deploy-all.sh` under the working directory to directly set up a hadoop HA cluster.
-The entire process takes about 15 min.
+
+The entire process may take around 30-45 min if you download the files online.
+Use local repo could accelerate the speed
+(Check vars in `book/install-hadoop.yaml` on where to put the downloaded binaries locally).
+
 It is highly recommended to check the `conf/hadoop` and `conf/zk` first and see if any modification is needed.
 
 ## Step-by-Step Deployment
