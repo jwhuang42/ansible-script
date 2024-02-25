@@ -38,7 +38,7 @@
      A sample config on one of the nodes could look like:
      ```
      Host 192.168.62.141
-       Hostname <controlled_node_hostname> # may need to configure /etc/hosts first
+       Hostname 192.168.62.141
        User admin
        PreferredAuthentications publickey
        IdentityFile ~/.ssh/<keyname>
@@ -47,17 +47,20 @@
 1. change directory to the ansible project(the location of this .md file) and configure the `hosts` ansible file
 
     1. Change directory to ansible project hadoop directory `ansible-script/hadoop` (the location of this .md file) on
-       the host machine.
-   1. Enter the docker container ansible using the "jwhuang42/ansible:8.7.0" image, mount related volumes
-      ```
-      docker run -it --rm --name ansible -v "$PWD":/work -v "$HOME/.ssh":"/root/.ssh" -v /etc/hosts:/etc/hosts jwhuang42/ansible:8.7.0
-      ```
-   1. Inside the container
-      ```
-      # Go to work directory and change owner from 1000 to root
-      cd /work && chown root:root ~/.ssh/config && chmod +x deploy-all.sh
-      ```
-   1. Check and configure the ansible hosts file.
+       the host machine.\
+       **Note**: If this is the first time running the setup script on the ansible control node, check
+       the `sync host failure`
+       section under the `troubleshoot` section and update the `/etc/hosts` first.
+    1. Enter the docker container ansible using the "jwhuang42/ansible:8.7.0" image, mount related volumes
+       ```
+       docker run -it --rm --name ansible -v "$PWD":/work -v "$HOME/.ssh":"/root/.ssh" -v /etc/hosts:/etc/hosts jwhuang42/ansible:8.7.0
+       ```
+    1. Inside the container
+       ```
+       # Go to work directory and change owner from 1000 to root
+       cd /work && chown root:root ~/.ssh/config && chmod +x deploy-all.sh && chmod +x deploy-ozone-all.sh
+       ```
+    1. Check and configure the ansible hosts file.
     - Change the VM IP addresses to the real one for Hadoop deployment under the `[nodes]` and `[zk_nodes]` section.
     - Add the IPs of the VMs you intend to install Hadoop under the `[newborn]` section.
    - Update the `ansible_ssh_private_key_file` under the `[hadoop_nodes]` section (points to the same IdentityFile in
@@ -198,3 +201,30 @@ The following shutdown guide will close Hadoop cluster with HA YARN and HA HDFS.
    ```
    ansible-playbook book/shutdown-zk.yaml -vv
    ```
+
+## Troubleshoot
+
+### sync host failure
+
+If this is the first time deploying the cluster, and you don't have any cluster info in `/etc/hosts` folder of
+your ansible control node, you may experience the following error when "sync-host" playbook is executed
+(both for the One line Deployment and applying sync-host.yaml playbook ):
+
+```
+[Errno 16] Device or resource busy: b'/etc/.ansible_<hash_value>' -> b'/etc/hosts'
+```
+
+This happens because docker daemon manages the `/etc/hosts` file, and you can not modify it within the container.
+The walk around is to copy the `[nodes]` section in the hosts file in the current directory to the `/etc/hosts`
+on the VM first, and only then perform the workflow. For example, copy:
+
+```
+# BEGIN ANSIBLE MANAGED HOSTNAME
+192.168.62.141 my.hadoop1 my.hbase1 my.ozone1 my.zk1
+192.168.62.142 my.hadoop2 my.hbase2 my.ozone2 my.zk2
+192.168.62.143 my.hadoop3 my.hbase3 my.ozone3 my.zk3
+192.168.62.144 my.hadoop4 my.hbase4 my.ozone4
+# END ANSIBLE MANAGED HOSTNAME
+```
+
+into the `/etc/hosts` on the ansible control machine.

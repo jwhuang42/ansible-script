@@ -4,17 +4,17 @@
 192.168.62.143
 192.168.62.144
 
-[ozonenewborn]
+[ozone_newborn]
 192.168.62.141
 192.168.62.142
 192.168.62.143
 192.168.62.144
 
 [nodes]
-192.168.62.141 hostname='my.hadoop1 my.hbase1 my.zk1'
-192.168.62.142 hostname='my.hadoop2 my.hbase2 my.zk2'
-192.168.62.143 hostname='my.hadoop3 my.hbase3 my.zk3'
-192.168.62.144 hostname='my.hadoop4 my.hbase4'
+192.168.62.141 hostname='my.hadoop1 my.hbase1 my.ozone1 my.zk1'
+192.168.62.142 hostname='my.hadoop2 my.hbase2 my.ozone2 my.zk2'
+192.168.62.143 hostname='my.hadoop3 my.hbase3 my.ozone3 my.zk3'
+192.168.62.144 hostname='my.hadoop4 my.hbase4 my.ozone4'
 
 [zk_nodes]
 my.zk1 ansible_host=192.168.62.141 myid=1
@@ -23,6 +23,31 @@ my.zk3 ansible_host=192.168.62.143 myid=3
 
 [hadoop_nodes]
 my.hadoop[1:4] ansible_ssh_private_key_file=/root/.ssh/id_rsa_root
+
+[ozone_nodes]
+my.ozone[1:4] ansible_ssh_private_key_file=/root/.ssh/id_rsa_root
+
+[oms]
+my.ozone1 omid=om1
+my.ozone2 omid=om2
+my.ozone3 omid=om3
+
+[scms]
+my.ozone2 scmid=scm1
+my.ozone3 scmid=scm2
+my.ozone4 scmid=scm3
+
+[recon]
+my.ozone1
+
+[s3g]
+my.ozone4
+
+[httpfs]
+my.ozone4
+
+[ozoneworkers]
+my.ozone[1:4]
 
 [namenodes]
 my.hadoop1 id=nn1 rpc_port=8020 http_port=9870

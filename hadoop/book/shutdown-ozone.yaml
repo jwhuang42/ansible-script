@@ -1,0 +1,43 @@
+---
+- name: Shutdown Ozone Cluster
+  hosts: ozone_nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    ozone_data_dir: '{{ data_dir }}/ozone/data'
+    ozone_metadata_dir: '{{ ozone_data_dir }}/metadata'
+
+  tasks:
+
+    - name: Determine the first ozone node
+      set_fact:
+        first_ozone_node: "{{ groups['ozone_nodes'][0] }}"
+
+    - name: shutdown s3g server
+      shell: ". /etc/profile && nohup ozone --daemon stop s3g"
+      when: inventory_hostname in groups['s3g']
+
+    # TODO: Fix the om graceful shutdown issue
+    - name: shutdown recon server
+      shell: ". /etc/profile && nohup ozone --daemon stop recon"
+      when: inventory_hostname in groups['recon']
+
+    - name: stop ozone cluster
+      shell: ". /etc/profile && stop-ozone.sh"
+      when: inventory_hostname == first_ozone_node
+
+    - name: Find all .lock files for om
+      find:
+        paths: "{{ozone_metadata_dir}}/ratis"
+        patterns: "*.lock"
+        recurse: yes
+      register: lock_files
+      when: inventory_hostname in groups['oms']
+
+    - name: Remove found .lock files
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ lock_files.files }}"
+      when: inventory_hostname in groups['oms']

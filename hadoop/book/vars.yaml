@@ -1,2 +1,3 @@
 hdfs_name: my-hdfs
 yarn_name: my-yarn
+ozone_name: my-ozone

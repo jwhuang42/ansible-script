@@ -1,0 +1,23 @@
+- name: Wait for the previous SCM "{{ groups['scms'][item|int] }}" ratis port to become available
+  wait_for:
+    host: "{{ groups['scms'][item|int] }}"
+    port: 9894
+    timeout: 90
+  when:
+    - inventory_hostname == groups['scms'][item|int + 1]
+
+- name: Check if the current scm has already initialized
+  stat:
+    path: "{{ozone_metadata_dir}}/scm/current/VERSION"
+  register: scm_init_check
+
+- name: Bootstrap current SCM if not initialized
+  shell: ". /etc/profile && nohup ozone scm --bootstrap"
+  when:
+    - inventory_hostname == groups['scms'][item|int + 1]
+    - not scm_init_check.stat.exists
+
+- name: start the current SCM
+  shell: ". /etc/profile && nohup ozone --daemon start scm"
+  when:
+    - inventory_hostname == groups['scms'][item|int + 1]

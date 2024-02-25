@@ -1,0 +1,57 @@
+---
+- name: Update Ozone Config
+  hosts: ozone_nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    template_dir: ../conf/ozone
+    ozone_home: '{{ deploy_dir }}/ozone'
+    ozone_conf_dir: '{{ ozone_home }}/etc/hadoop'
+    ozone_data_dir: '{{ data_dir }}/ozone/data'
+    ozone_metadata_dir: '{{ ozone_data_dir }}/metadata'
+    hdds_data_dir: '{{ ozone_data_dir }}/hdds'
+
+  tasks:
+
+    - name: Include common vars
+      include_vars: file=vars.yaml
+
+    - name: Create data directory
+      become: true
+      file:
+        state: directory
+        path: '{{ ozone_data_dir }}'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: 0775
+        recurse: yes
+
+    - name: Create metadata directory
+      become: true
+      file:
+        state: directory
+        path: '{{ ozone_metadata_dir }}'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: 0775
+        recurse: yes
+
+    - name: Create hdds data directory
+      become: true
+      file:
+        state: directory
+        path: '{{ hdds_data_dir }}'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: 0775
+        recurse: yes
+
+    - name: Sync ozone config
+      template:
+        src: '{{ template_dir }}/{{ item }}'
+        dest: '{{ ozone_conf_dir }}/{{ item }}'
+      with_items:
+        - core-site.xml
+        - ozone-site.xml
+        - workers

@@ -1,17 +1,17 @@
 ---
 - name: Install Hadoop Package
-  hosts: ozonenewborn
+  hosts: ozone_newborn
   gather_facts: false
   any_errors_fatal: true
 
   vars:
-    install_from_remote: true
+    install_from_remote: false
     local_repo: '../repo/ozone'
     remote_repo: '~/repo/ozone'
     # NOTE: Change the `src` below to correct package in `local_repo` if install via local package.
     package_info:
       - { src: 'openlogic-openjdk-8u392-b08-linux-x64.tar.gz', dst: 'java/jdk8u392-b08', home: 'jdk8', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/8u392-b08/openlogic-openjdk-8u392-b08-linux-x64.tar.gz' }
-      - { src: 'ozone-1.4.0.tar.gz', dst: 'apache/ozone-1.4.0', home: 'ozone', link: 'https://archive.apache.org/dist/ozone/1.4.0/ozone-1.4.0.tar.gz' }
+      - { src: 'ozone-1.3.0.tar.gz', dst: 'apache/ozone-1.3.0', home: 'ozone', link: 'https://archive.apache.org/dist/ozone/1.3.0/ozone-1.3.0.tar.gz' }
 
   tasks:
 
@@ -75,4 +75,24 @@
         marker: "# {mark} ANSIBLE MANAGED PROFILE"
         block: |
           export JAVA_HOME={{ deploy_dir }}/jdk8
-          export PATH=$JAVA_HOME/bin:$PATH
+          export OZONE_HOME={{ deploy_dir }}/ozone
+          export PATH=$JAVA_HOME/bin:$OZONE_HOME/bin:$OZONE_HOME/sbin:$PATH
+
+    - name: config ozone-env.sh
+      blockinfile:
+        dest: '{{ deploy_dir }}/ozone/etc/hadoop/ozone-env.sh'
+        marker: "# {mark} ANSIBLE MANAGED DEFAULT OZONE ENV"
+        block: |
+          export JAVA_HOME={{ deploy_dir }}/jdk8
+          export OZONE_HOME={{ deploy_dir }}/ozone
+          export OZONE_LOG_DIR={{ data_dir }}/ozone/logs
+
+    - name: Create log directory
+      become: true
+      file:
+        state: directory
+        path: '{{ data_dir }}/ozone/logs'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: 0775
+        recurse: yes

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>ozone.metadata.dirs</name>
+        <value>{{ ozone_metadata_dir }}</value>
+    </property>
+    <property>
+        <name>ozone.scm.datanode.id.dir</name>
+        <value>{{ ozone_data_dir }}</value>
+    </property>
+    <property>
+        <name>hdds.datanode.dir</name>
+        <value>{{ hdds_data_dir }}</value>
+    </property>
+    <property>
+        <name>hdds.scmclient.max.retry.timeout</name>
+        <value>30s</value>
+    </property>
+    <property>
+        <name>ozone.scm.primordial.node.id</name>
+        <value>{{ hostvars[groups['scms'][0]]['scmid'] }}</value>
+    </property>
+    <property>
+        <name>hdds.container.report.interval</name>
+        <value>60s</value>
+    </property>
+    <property>
+        <name>ozone.om.s3.grpc.server_enabled</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>ozone.recon.db.dir</name>
+        <value>{{ ozone_metadata_dir }}/recon</value>
+    </property>
+    <property>
+        <name>ozone.recon.address</name>
+        <value>{{ groups['recon'][0] }}</value>
+    </property>
+    <property>
+        <name>dfs.container.ratis.datastream.enabled</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>ozone.server.default.replication</name>
+        <value>3</value>
+    </property>
+    <property>
+        <name>hdds.scm.safemode.min.datanode</name>
+        <value>1</value>
+    </property>
+
+
+    <property>
+        <name>ozone.om.ratis.enable</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>ozone.om.service.ids</name>
+        <value>{{ ozone_name }}-om</value>
+    </property>
+    <property>
+        <name>ozone.om.nodes.{{ozone_name}}-om</name>
+        <value>{{ groups['oms'] | map('extract', hostvars) | map(attribute='omid') | join(',') }}</value>
+    </property>
+    {%- for host in groups['oms'] -%}
+    <property>
+        <name>ozone.om.address.{{ozone_name}}-om.{{hostvars[host]['omid']}}</name>
+        <value>{{host}}</value>
+    </property>
+    {%- endfor -%}
+
+    <property>
+        <name>ozone.scm.ratis.enable</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>ozone.scm.service.ids</name>
+        <value>{{ ozone_name }}-scm</value>
+    </property>
+    <property>
+        <name>ozone.scm.nodes.{{ozone_name}}-scm</name>
+        <value>{{ groups['scms'] | map('extract', hostvars) | map(attribute='scmid') | join(',') }}</value>
+    </property>
+
+    {%- for host in groups['scms'] -%}
+    <property>
+        <name>ozone.scm.address.{{ozone_name}}-scm.{{hostvars[host]['scmid']}}</name>
+        <value>{{host}}</value>
+    </property>
+    {%- endfor -%}
+
+</configuration>

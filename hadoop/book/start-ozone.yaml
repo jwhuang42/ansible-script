@@ -1,0 +1,45 @@
+---
+- name: Start/upgrade Ozone Cluster
+  hosts: ozone_nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  tasks:
+
+    - name: Determine the first ozone node
+      set_fact:
+        first_ozone_node: "{{ groups['ozone_nodes'][0] }}"
+
+    # TODO: Fix the om graceful shutdown issue
+    - name: start ozone cluster
+      shell: ". /etc/profile && start-ozone.sh"
+      when: inventory_hostname == first_ozone_node
+
+    - name: Check StorageContainerManagerStarter process exist on the scms group
+      shell: ". /etc/profile && jps | grep StorageContainerManagerStarter"
+      register: scm_check
+      failed_when: scm_check.stdout == ""
+      when:
+        - inventory_hostname in groups['scms']
+
+    - name: Check OzoneManagerStarter process exist on the om
+      shell: ". /etc/profile && jps | grep OzoneManagerStarter"
+      register: om_check
+      failed_when: om_check.stdout == ""
+      when:
+        - inventory_hostname in groups['oms']
+
+    - name: Check HddsDatanodeService process exist on the ozone nodes
+      shell: ". /etc/profile && jps | grep HddsDatanodeService"
+      register: dn_check
+      failed_when: dn_check.stdout == ""
+      when:
+        - inventory_hostname in groups['ozone_nodes']
+
+    - name: start recon server
+      shell: ". /etc/profile && nohup ozone --daemon start recon"
+      when: inventory_hostname in groups['recon']
+
+    - name: start s3g server
+      shell: ". /etc/profile && nohup ozone --daemon start s3g"
+      when: inventory_hostname in groups['s3g']

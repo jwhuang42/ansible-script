@@ -105,7 +105,7 @@
     - name: Start job history server on the first resource manager node
       shell: ". /etc/profile && nohup mapred --daemon start historyserver"
       when: inventory_hostname == first_rm_host
-
+  nohup ozone --daemon start scm
     - name: Print success message on the local control node
       local_action:
         module: debug

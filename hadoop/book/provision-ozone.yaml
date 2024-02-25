@@ -1,0 +1,105 @@
+---
+- name: Provision Ozone Cluster
+  hosts: ozone_nodes
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    ozone_data_dir: '{{ data_dir }}/ozone/data'
+    ozone_metadata_dir: '{{ ozone_data_dir }}/metadata'
+
+  tasks:
+
+    - name: Determine the first ozone manager host in the oms group
+      set_fact:
+        first_om_node: "{{ groups['oms'][0] }}"
+    - name: Determine the first ozone storage container manager host in the scms group
+      set_fact:
+        first_scm_node: "{{ groups['scms'][0] }}"
+
+    - name: Check if the first scm is initialized
+      stat:
+        path: "{{ozone_metadata_dir}}/scm/current/VERSION"
+      register: scm_init_check
+
+    - name: init first scm if not initialized
+      shell: ". /etc/profile && nohup ozone scm --init"
+      when:
+        - inventory_hostname == first_scm_node
+        - not scm_init_check.stat.exists
+
+    - name: start first scm
+      shell: ". /etc/profile && nohup ozone --daemon start scm"
+      when: inventory_hostname == first_scm_node
+
+    - name: Set a variable for the length of the 'scms' group
+      set_fact:
+        scms_length: "{{ groups['scms'] | length }}"
+
+    - name: Sequentially bootstrap other SCMs
+      include_tasks: bootstrap-scm.yaml
+      loop: "{{ range(1, scms_length|int) }}"
+      loop_control:
+        index_var: item
+      when: scms_length|int >= 2
+
+    - name: Wait for the SCM "{{ groups['scms'][-1] }}" ratis port to become available
+      wait_for:
+        host: "{{ groups['scms'][-1] }}"
+        port: 9894
+        timeout: 90
+      when:
+        - inventory_hostname == groups['scms'][-1]
+        - scms_length|int >= 2
+
+    - name: Check StorageContainerManagerStarter process exist on the scms group
+      shell: ". /etc/profile && jps | grep StorageContainerManagerStarter"
+      register: scm_check
+      failed_when: scm_check.stdout == ""
+      when:
+        - inventory_hostname in groups['scms']
+
+    - name: Check if the om has already initialized
+      stat:
+        path: "{{ozone_metadata_dir}}/om/current/VERSION"
+      register: om_init_check
+
+    - name: init oms
+      shell: ". /etc/profile && nohup ozone om --init"
+      when:
+        - inventory_hostname in groups['oms']
+        - not om_init_check.stat.exists
+
+    - name: start om
+      shell: ". /etc/profile && nohup ozone --daemon start om"
+      when:
+        - inventory_hostname in groups['oms']
+
+    - name: Pause for 30 seconds to let om start
+      pause:
+        seconds: 30
+
+    - name: Check OzoneManagerStarter process exist on the om
+      shell: ". /etc/profile && jps | grep OzoneManagerStarter"
+      register: om_check
+      failed_when: om_check.stdout == ""
+      when:
+        - inventory_hostname in groups['oms']
+
+    - name: start datanodes
+      shell: ". /etc/profile && nohup ozone --daemon start datanode"
+
+    - name: Check HddsDatanodeService process exist on the ozone nodes
+      shell: ". /etc/profile && jps | grep HddsDatanodeService"
+      register: dn_check
+      failed_when: dn_check.stdout == ""
+      when:
+        - inventory_hostname in groups['ozone_nodes']
+
+    - name: start recon server
+      shell: ". /etc/profile && nohup ozone --daemon start recon"
+      when: inventory_hostname in groups['recon']
+
+    - name: start s3g server
+      shell: ". /etc/profile && nohup ozone --daemon start s3g"
+      when: inventory_hostname in groups['s3g']
