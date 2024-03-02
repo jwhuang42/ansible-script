@@ -30,7 +30,14 @@ check_failure() {
 echo "################################"
 echo "       Set up hadoop user       "
 echo "################################"
-ansible-playbook book/setup-user.yaml -e ansible_user=root -vv
+ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=admin -vv
+check_failure
+wait_for_input
+
+echo "################################"
+echo "     Set up prometheus user     "
+echo "################################"
+ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=prometheus -vv
 check_failure
 wait_for_input
 
@@ -49,6 +56,13 @@ check_failure
 wait_for_input
 
 echo "################################"
+echo "        Install Prometheus      "
+echo "################################"
+ansible-playbook book/install-prometheus.yaml -e ansible_user=prometheus -vv
+check_failure
+wait_for_input
+
+echo "################################"
 echo "  Configure and start Zookeeper "
 echo "################################"
 ansible-playbook book/config-zk.yaml -vv
@@ -62,8 +76,22 @@ ansible-playbook book/config-hadoop.yaml -vv
 check_failure
 wait_for_input
 
+echo "################################"
+echo "     Configure metrics export   "
+echo "################################"
+ansible-playbook book/config-metrics.yaml -vv
+check_failure
+wait_for_input
+
 echo "######################################"
 echo "Initialize and start the HDFS and YARN"
 echo "######################################"
 ansible-playbook book/provision-hadoop.yaml -vv
 check_failure
+
+echo "################################"
+echo "      Configure prometheus      "
+echo "################################"
+ansible-playbook book/config-prometheus.yaml -e ansible_user=prometheus -vv
+check_failure
+wait_for_input

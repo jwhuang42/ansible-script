@@ -1,0 +1,68 @@
+---
+- name: Install and configure Prometheus monitoring on the cluster
+  hosts: prometheus
+  gather_facts: no
+  any_errors_fatal: true
+
+  vars:
+    install_from_remote: false
+    local_repo: '../repo/monitoring'
+    remote_repo: '~/repo/monitoring'
+
+    package_info:
+      - { src: 'prometheus-2.50.1.linux-amd64.tar.gz', dst: 'monitoring/prometheus-2.50.1.linux-amd64', home: 'prometheus', link: 'https://github.com/prometheus/prometheus/releases/download/v2.50.1/prometheus-2.50.1.linux-amd64.tar.gz' }
+
+  tasks:
+
+    - name: test connectivity
+      ping:
+
+    - name: copy or download prometheus
+      block:
+        - name: copy package from local repo
+          copy:
+            src: '{{ local_repo }}'
+            dest: '~/repo'
+          when: not install_from_remote
+
+        - name: Copy the download script to the remote machine
+          copy:
+            src: '../repo/download_util.sh'
+            dest: /tmp/download_util.sh
+            mode: '0755'
+          when: install_from_remote
+
+        - name: Download packages using the custom script
+          command: /tmp/download_util.sh "{{ item.link }}" "{{ remote_repo }}"
+          with_items: "{{ package_info }}"
+          when: install_from_remote
+
+    - name: prepare directory
+      become: true
+      file:
+        state: directory
+        path: '{{ deploy_dir }}/{{ item.dst }}'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+        mode: 0775
+        recurse: yes
+      with_items: '{{ package_info }}'
+
+    - name: create link
+      become: true
+      file:
+        state: link
+        src: '{{ deploy_dir }}/{{ item.dst }}'
+        dest: '{{ deploy_dir }}/{{ item.home }}'
+        owner: '{{ ansible_user }}'
+        group: '{{ ansible_user }}'
+      with_items: '{{ package_info }}'
+
+    - name: install package
+      unarchive:
+        src: '{{ remote_repo }}/{{ item.src }}'
+        dest: '{{ deploy_dir }}/{{ item.dst }}'
+        remote_src: yes
+        extra_opts:
+          - --strip-components=1
+      with_items: '{{ package_info }}'

@@ -7,6 +7,14 @@
   vars:
     ozone_data_dir: '{{ data_dir }}/ozone/data'
     ozone_metadata_dir: '{{ ozone_data_dir }}/metadata'
+    systemd_template_dir: ../systemd-template/ozone
+    systemd_service_dir: /etc/systemd/system
+    services:
+      - { name: om.service, group: oms }
+      - { name: scm.service, group: scms }
+      - { name: datanode.service, group: ozone_nodes }
+      - { name: recon.service, group: recon }
+      - { name: s3g.service, group: s3g }
 
   tasks:
 
@@ -70,36 +78,17 @@
         - inventory_hostname in groups['oms']
         - not om_init_check.stat.exists
 
-    - name: start om
-      shell: ". /etc/profile && nohup ozone --daemon start om"
-      when:
-        - inventory_hostname in groups['oms']
+    - name: Sync systemd config for services
+      become: true
+      template:
+        src: "{{ systemd_template_dir }}/{{ item.name }}"
+        dest: "{{ systemd_service_dir }}/{{ item.name }}"
+      loop: "{{ services }}"
+      when: inventory_hostname in groups[item.group]
 
-    - name: Pause for 30 seconds to let om start
-      pause:
-        seconds: 30
-
-    - name: Check OzoneManagerStarter process exist on the om
-      shell: ". /etc/profile && jps | grep OzoneManagerStarter"
-      register: om_check
-      failed_when: om_check.stdout == ""
-      when:
-        - inventory_hostname in groups['oms']
-
-    - name: start datanodes
-      shell: ". /etc/profile && nohup ozone --daemon start datanode"
-
-    - name: Check HddsDatanodeService process exist on the ozone nodes
-      shell: ". /etc/profile && jps | grep HddsDatanodeService"
-      register: dn_check
-      failed_when: dn_check.stdout == ""
-      when:
-        - inventory_hostname in groups['ozone_nodes']
-
-    - name: start recon server
-      shell: ". /etc/profile && nohup ozone --daemon start recon"
-      when: inventory_hostname in groups['recon']
-
-    - name: start s3g server
-      shell: ". /etc/profile && nohup ozone --daemon start s3g"
-      when: inventory_hostname in groups['s3g']
+    - name: Import systemd restart tasks
+      include_tasks: restart_systemd_service.yaml
+      loop: "{{ services }}"
+      when: inventory_hostname in groups[item.group]
+      loop_control:
+        loop_var: item

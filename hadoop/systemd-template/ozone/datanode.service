@@ -1,0 +1,15 @@
+[Unit]
+Description=Ozone Manager
+After=network.target
+
+[Service]
+User={{ ansible_user }}
+Group={{ ansible_user }}
+Type=simple
+EnvironmentFile={{ deploy_dir }}/ozone/etc/hadoop/ozone-env.sh
+ExecStart={{ deploy_dir }}/ozone/bin/ozone datanode
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

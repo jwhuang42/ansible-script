@@ -74,6 +74,10 @@ my.hbase[1:2]
 [regionservers]
 my.hbase[1:4]
 
+[prometheus]
+192.168.62.141 replicaid=0
+192.168.62.142 replicaid=1
+
 [all:vars]
 ansible_user=admin
 deploy_dir=/opt

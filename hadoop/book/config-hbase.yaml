@@ -15,7 +15,7 @@
   tasks:
 
     - name: Include common vars
-      include_vars: file=vars.yml
+      include_vars: file=vars.yaml
 
     - name: Create data directory
       become: true

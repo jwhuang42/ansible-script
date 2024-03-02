@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 60s
+  evaluation_interval: 60s
+  external_labels:
+    region: 'A'
+    replica: '{{ hostvars[inventory_hostname]['replicaid'] }}'
+
+rule_files:
+scrape_configs:
+
+  - job_name: "prometheus"
+    file_sd_configs:
+      - files:
+          - targets/prometheus-*.yaml
+        refresh_interval: 1m
+
+  - job_name: "zookeeper"
+    file_sd_configs:
+      - files:
+          - targets/zk-cluster.yaml
+        refresh_interval: 1m
+    metric_relabel_configs:
+      - action: replace
+        source_labels: [ "instance" ]
+        target_label: "instance"
+        regex: "([^:]+):.*"
+        replacement: "$1"
+
+  - job_name: "hadoop"
+    file_sd_configs:
+      - files:
+          - targets/hadoop-cluster.yaml
+        refresh_interval: 1m
+    metric_relabel_configs:
+      - action: replace
+        source_labels: [ "__name__" ]
+        target_label: "__name__"
+        regex: "Hadoop_[^_]*_(.*)"
+        replacement: "$1"
+      - action: replace
+        source_labels: [ "instance" ]
+        target_label: "instance"
+        regex: "([^:]+):.*"
+        replacement: "$1"

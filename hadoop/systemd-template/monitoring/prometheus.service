@@ -1,0 +1,25 @@
+[Unit]
+Description=Prometheus Server
+Documentation=https://prometheus.io/docs/introduction/overview/
+Wants=network.target
+After=network.target
+
+[Service]
+User={{ ansible_user }}
+Group={{ ansible_user }}
+Type=simple
+ExecStart={{prometheus_home}}/prometheus \
+    --config.file={{prometheus_home}}/prometheus.yaml \
+    --log.level=info \
+    --storage.tsdb.path={{prometheus_data_loc}} \
+--web.listen-address='0.0.0.0:9090' \
+--storage.tsdb.max-block-duration=2h \
+--storage.tsdb.min-block-duration=2h \
+--storage.tsdb.wal-compression \
+--storage.tsdb.retention.time=2h \
+--web.enable-lifecycle
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

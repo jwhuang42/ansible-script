@@ -9,7 +9,7 @@
   any_errors_fatal: true
 
   vars:
-    install_from_remote: true
+    install_from_remote: false
     install_hbase: false
     local_repo: '../repo/hadoop'
     remote_repo: '~/repo/hadoop'
@@ -37,7 +37,7 @@
 
         - name: Copy the download script to the remote machine
           copy:
-            src: '{{ local_repo }}/download_util.sh'
+            src: '../repo/download_util.sh'
             dest: /tmp/download_util.sh
             mode: '0755'
           when: install_from_remote

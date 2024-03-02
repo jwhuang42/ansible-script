@@ -1,6 +1,6 @@
 - targets:
   { % for host in groups[ 'zk_nodes' ] % }
-- { { host } }:7000
-  { % endfor % }
-labels:
-  service: zookeeper
+  - { { host } }:7000
+  {% endfor %}
+  labels:
+    service: zookeeper

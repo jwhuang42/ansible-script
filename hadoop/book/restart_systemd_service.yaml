@@ -1,0 +1,7 @@
+- name: Restart and enable service
+  become: true
+  systemd:
+    name: "{{ item.name }}"
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
