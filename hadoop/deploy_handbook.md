@@ -44,7 +44,14 @@
        IdentityFile ~/.ssh/<keyname>
      ```
 
-1. change directory to the ansible project(the location of this .md file) and configure the `hosts` ansible file
+1. Setup ansible environment
+
+   Note: there are two ways to do this, directly do this on ansible control node, or use ansible docker container.
+
+   But first, change directory to the ansible project(the location of this .md file) and configure the `hosts` ansible
+   file.
+
+   **Option 1** Docker
 
     1. Change directory to ansible project hadoop directory `ansible-script/hadoop` (the location of this .md file) on
        the host machine.\
@@ -65,6 +72,15 @@
     - Add the IPs of the VMs you intend to install Hadoop under the `[newborn]` section.
    - Update the `ansible_ssh_private_key_file` under the `[hadoop_nodes]` section (points to the same IdentityFile in
      the .ssh/config).
+
+   **Option 2** Local Machine
+
+    1. Makes sure python 3.10 and ansible 8.7.0 are installed before proceed. You can check the `Dockerfile` in the
+       parent
+       directory for the installation guide.
+
+    2. Change directory to ansible project hadoop directory `ansible-script/hadoop` (the location of this .md file) on
+       the host machine.
 
 ## One line Deployment
 
@@ -206,17 +222,17 @@ The following shutdown guide will close Hadoop cluster with HA YARN and HA HDFS.
 
 ### sync host failure
 
-If this is the first time deploying the cluster, and you don't have any cluster info in `/etc/hosts` folder of
-your ansible control node, you may experience the following error when "sync-host" playbook is executed
-(both for the One line Deployment and applying sync-host.yaml playbook ):
+If this is your first time deploy cluster, and you don't have any hosts mapping configured in the `/etc/hosts` folder of
+your ansible control node, you may experience the following error when `sync-host.yaml` playbook is executed:
 
 ```
 [Errno 16] Device or resource busy: b'/etc/.ansible_<hash_value>' -> b'/etc/hosts'
 ```
 
-This happens because docker daemon manages the `/etc/hosts` file, and you can not modify it within the container.
+This happens because docker daemon manages the `/etc/hosts` file once a container starts, you can not modify it within
+the container.
 The walk around is to copy the `[nodes]` section in the hosts file in the current directory to the `/etc/hosts`
-on the VM first, and only then perform the workflow. For example, copy:
+on the ansible control node first, and perform the workflow after that. For example, copy:
 
 ```
 # BEGIN ANSIBLE MANAGED HOSTNAME
@@ -227,4 +243,4 @@ on the VM first, and only then perform the workflow. For example, copy:
 # END ANSIBLE MANAGED HOSTNAME
 ```
 
-into the `/etc/hosts` on the ansible control machine.
+into the `/etc/hosts` on the ansible control machine before executing the `sync-host.yaml` playbook.
