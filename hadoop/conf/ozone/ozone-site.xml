@@ -49,7 +49,10 @@
         <name>hdds.scm.safemode.min.datanode</name>
         <value>1</value>
     </property>
-
+    <property>
+        <name>hdds.prometheus.endpoint.enabled</name>
+        <value>true</value>
+    </property>
 
     <property>
         <name>ozone.om.ratis.enable</name>

@@ -30,7 +30,14 @@ check_failure() {
 echo "################################"
 echo "       Set up Ozone user        "
 echo "################################"
-ansible-playbook book/setup-user.yaml -e ansible_user=root -vv
+ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=admin -vv
+check_failure
+wait_for_input
+
+echo "################################"
+echo "     Set up prometheus user     "
+echo "################################"
+ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=prometheus -vv
 check_failure
 wait_for_input
 
@@ -49,6 +56,13 @@ check_failure
 wait_for_input
 
 echo "################################"
+echo "        Install Prometheus      "
+echo "################################"
+ansible-playbook book/install-prometheus.yaml -e ansible_user=prometheus -vv
+check_failure
+wait_for_input
+
+echo "################################"
 echo "        Configure Ozone         "
 echo "################################"
 ansible-playbook book/config-ozone.yaml -vv
@@ -59,4 +73,11 @@ echo "#############################################"
 echo "    Initialize and start the Ozone cluster   "
 echo "#############################################"
 ansible-playbook book/provision-ozone.yaml -e provision_ozone=true -vv
+check_failure
+wait_for_input
+
+echo "################################"
+echo "      Configure prometheus      "
+echo "################################"
+ansible-playbook book/config-prometheus.yaml -e ansible_user=prometheus -e monitoring_cluster=ozone -vv
 check_failure

@@ -88,10 +88,10 @@ echo "Initialize and start the HDFS and YARN"
 echo "######################################"
 ansible-playbook book/provision-hadoop.yaml -vv
 check_failure
+wait_for_input
 
 echo "################################"
 echo "      Configure prometheus      "
 echo "################################"
-ansible-playbook book/config-prometheus.yaml -e ansible_user=prometheus -vv
+ansible-playbook book/config-prometheus.yaml -e ansible_user=prometheus -e monitoring_cluster=hadoop -vv
 check_failure
-wait_for_input

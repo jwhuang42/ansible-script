@@ -7,13 +7,13 @@ global:
 
 rule_files:
 scrape_configs:
-
   - job_name: "prometheus"
     file_sd_configs:
       - files:
           - targets/prometheus-*.yaml
         refresh_interval: 1m
 
+  { % if monitoring_cluster == 'hadoop' % }
   - job_name: "zookeeper"
     file_sd_configs:
       - files:
@@ -42,3 +42,13 @@ scrape_configs:
         target_label: "instance"
         regex: "([^:]+):.*"
         replacement: "$1"
+  { % endif % }
+
+  { % if monitoring_cluster == 'ozone' % }
+- job_name: ozone
+  metrics_path: /prom
+  file_sd_configs:
+    - files:
+        - targets/ozone-cluster.yaml
+      refresh_interval: 1m
+  { % endif % }

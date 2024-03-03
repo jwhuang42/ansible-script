@@ -12,6 +12,7 @@
     prometheus_data_loc: '{{ data_dir }}/prometheus'
     systemd_template_dir: ../systemd-template/monitoring
     systemd_service_dir: /etc/systemd/system
+    monitoring_cluster: 'hadoop'
 
     namenode_metrics_port: 7021
     datanode_metrics_port: 7022
@@ -44,7 +45,7 @@
         group: '{{ ansible_user }}'
         state: directory
 
-    - name: generate target config to "{{ prometheus_target_dir }}"
+    - name: generate Hadoop cluster target config to "{{ prometheus_target_dir }}"
       template:
         src: '{{ prometheus_target_tmpl }}/{{ item }}'
         dest: '{{ prometheus_target_dir }}/{{ item }}'
@@ -53,6 +54,16 @@
         - hbase-cluster.yaml
         - zk-cluster.yaml
         - prometheus-servers.yaml
+      when: monitoring_cluster == 'hadoop'
+
+    - name: generate Ozone cluster target config to "{{ prometheus_target_dir }}"
+      template:
+        src: '{{ prometheus_target_tmpl }}/{{ item }}'
+        dest: '{{ prometheus_target_dir }}/{{ item }}'
+      with_items:
+        - ozone-cluster.yaml
+        - prometheus-servers.yaml
+      when: monitoring_cluster == 'ozone'
 
     - name: Remove the existing 'prometheus.yml' on the remote machine
       file:
