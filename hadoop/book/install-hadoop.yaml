@@ -27,6 +27,9 @@
     - name: test connectivity
       ping:
 
+    - name: Include common vars
+      include_vars: file=vars.yaml
+
     - name: copy or download hadoop package
       block:
         - name: copy package from local repo
@@ -87,7 +90,7 @@
           export HADOOP_HOME={{ deploy_dir }}/hadoop
           export HBASE_HOME={{ deploy_dir }}/hbase
           export SPARK_HOME={{ deploy_dir }}/spark
-          export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$SPARK_HOME/bin:$PATH
+          export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HBASE_HOME/bin:$SPARK_HOME/sbin:$PATH
 
     - name: config zkEnv.sh
       lineinfile:
@@ -120,6 +123,15 @@
           export JAVA_HOME={{ deploy_dir }}/jdk8
           export HADOOP_CONF_DIR={{ deploy_dir }}/hadoop/etc/hadoop
           export YARN_CONF_DIR={{ deploy_dir }}/hadoop/etc/hadoop
+          export SPARK_HISTORY_OPTS="-Dspark.history.ui.port=18080 -Dspark.history.fs.logDirectory=hdfs://{{ hdfs_name }}/tmp/spark -Dspark.history.retainedApplications=30"
+        mode: '0755'
+
+    - name: Config environment for spark history server
+      copy:
+        dest: "{{ deploy_dir }}/spark/conf/spark-defaults.conf"
+        content: |
+          spark.eventLog.enabled  true
+          spark.eventLog.dir      hdfs://{{ hdfs_name }}/tmp/spark
         mode: '0755'
 
     - name: link hadoop config
@@ -161,11 +173,11 @@
         state: present
       when: ansible_distribution == "CentOS"
 
-    - name: Update apt cache (Ubuntu)
-      become: true
-      apt:
-        update_cache: yes
-      when: ansible_distribution == "Ubuntu"
+    #    - name: Update apt cache (Ubuntu)
+    #      become: true
+    #      apt:
+    #        update_cache: yes
+    #      when: ansible_distribution == "Ubuntu"
 
     - name: Install libraries (Ubuntu)
       become: true

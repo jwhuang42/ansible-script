@@ -153,8 +153,12 @@
       set_fact:
         first_rm_host: "{{ groups['resourcemanagers'][0] }}"
 
-    - name: Start job history server on the first resource manager node
+    - name: Start Hadoop job history server on the first resource manager node
       shell: ". /etc/profile && nohup mapred --daemon start historyserver"
+      when: inventory_hostname == first_rm_host
+
+    - name: Start Spark history server on the first resource manager node
+      shell: ". /etc/profile && start-history-server.sh"
       when: inventory_hostname == first_rm_host
 
     - name: Print success message on the local control node

@@ -18,6 +18,10 @@
     - name: Check running processes before shutdown
       shell: ". /etc/profile && jps"
 
+    - name: Stop Spark history server on the first resource manager node
+      shell: ". /etc/profile && stop-history-server.sh"
+      when: inventory_hostname == first_rm_host
+
     - name: Stop yarn job HistoryServer
       shell: ". /etc/profile && nohup mapred --daemon stop historyserver"
       when: inventory_hostname == first_rm_host

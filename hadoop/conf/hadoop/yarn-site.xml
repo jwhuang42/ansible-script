@@ -121,6 +121,10 @@
         <name>yarn.nodemanager.vmem-check-enabled</name>
         <value>false</value>
     </property>
+    <property>
+        <name>yarn.nodemanager.pmem-check-enabled</name>
+        <value>false</value>
+    </property>
     <!-- 设置虚拟内存和物理内存的比例 -->
     <property>
         <name>yarn.nodemanager.vmem-pmem-ratio</name>
