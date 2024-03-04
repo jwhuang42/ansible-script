@@ -10,7 +10,8 @@
   { % for host in groups[ 'datanodes' ] % }
 - { { host } }:{{ datanode_metrics_port }}
   { % endfor % }
-  labels:
+
+labels:
     role: datanode
     service: hdfs
 
