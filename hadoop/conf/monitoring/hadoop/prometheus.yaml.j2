@@ -17,7 +17,7 @@ scrape_configs:
   - job_name: "zookeeper"
     file_sd_configs:
       - files:
-          - targets/zk-cluster.yaml.j2
+          - targets/zk-cluster.yaml
         refresh_interval: 1m
     metric_relabel_configs:
       - action: replace
@@ -29,7 +29,7 @@ scrape_configs:
   - job_name: "hadoop"
     file_sd_configs:
       - files:
-          - targets/hadoop-cluster.yaml.j2
+          - targets/hadoop-cluster.yaml
         refresh_interval: 1m
     metric_relabel_configs:
       - action: replace
@@ -49,6 +49,6 @@ scrape_configs:
     metrics_path: /prom
     file_sd_configs:
       - files:
-          - targets/ozone-cluster.yaml.j2
+          - targets/ozone-cluster.yaml
         refresh_interval: 1m
 {% endif %}
