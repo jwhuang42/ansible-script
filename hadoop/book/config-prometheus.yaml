@@ -47,7 +47,7 @@
 
     - name: generate Hadoop cluster target config to "{{ prometheus_target_dir }}"
       template:
-        src: '{{ prometheus_target_tmpl }}/{{ item }}'
+        src: '{{ prometheus_target_tmpl }}/{{ item }}.j2'
         dest: '{{ prometheus_target_dir }}/{{ item }}'
       with_items:
         - hadoop-cluster.yaml
@@ -58,7 +58,7 @@
 
     - name: generate Ozone cluster target config to "{{ prometheus_target_dir }}"
       template:
-        src: '{{ prometheus_target_tmpl }}/{{ item }}'
+        src: '{{ prometheus_target_tmpl }}/{{ item }}.j2'
         dest: '{{ prometheus_target_dir }}/{{ item }}'
       with_items:
         - ozone-cluster.yaml
@@ -72,7 +72,7 @@
 
     - name: Sync prometheus config
       template:
-        src: '{{ template_dir }}/{{ item }}'
+        src: '{{ template_dir }}/{{ item }}.j2'
         dest: '{{ prometheus_home }}/{{ item }}'
       with_items:
         - prometheus.yaml

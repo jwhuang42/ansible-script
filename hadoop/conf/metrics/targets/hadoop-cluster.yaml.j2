@@ -1,0 +1,39 @@
+- targets:
+{% for host in groups[ 'namenodes' ] %}
+    - {{ host }}:{{ namenode_metrics_port }}
+{% endfor %}
+  labels:
+    role: namenode
+    service: hdfs
+
+- targets:
+{% for host in groups[ 'datanodes' ] %}
+    - {{ host }}:{{ datanode_metrics_port }}
+{% endfor %}
+  labels:
+    role: datanode
+    service: hdfs
+
+- targets:
+{% for host in groups[ 'journalnodes' ] %}
+    - {{ host }}:{{ journalnode_metrics_port }}
+{% endfor %}
+  labels:
+    role: journalnode
+    service: hdfs
+
+- targets:
+{% for host in groups[ 'resourcemanagers' ] %}
+    - {{ host }}:{{ resourcemanager_metrics_port }}
+{% endfor %}
+  labels:
+    role: resourcemanager
+    service: yarn
+
+- targets:
+{% for host in groups[ 'datanodes' ] %}
+    - {{ host }}:{{ nodemanager_metrics_port }}
+{% endfor %}
+  labels:
+    role: nodemanager
+    service: yarn

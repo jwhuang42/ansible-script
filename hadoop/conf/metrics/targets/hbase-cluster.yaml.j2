@@ -1,0 +1,15 @@
+- targets:
+{% for host in groups[ 'hmasters' ] %}
+    - {{ host }}:{{ hmaster_metrics_port }}
+{% endfor %}
+  labels:
+    role: hmaster
+    service: hbase
+
+- targets:
+{% for host in groups[ 'regionservers' ] %}
+    - {{ host }}:{{ regionserver_metrics_port }}
+{% endfor %}
+  labels:
+    role: regionserver
+    service: hbase

@@ -1,0 +1,15 @@
+- targets:
+{% for host in groups[ 'oms' ] %}
+    - {{ host }}:9874
+{% endfor %}
+  labels:
+    role: OzoneManager
+    service: ozone
+
+- targets:
+{% for host in groups[ 'scms' ] %}
+    - {{ host }}:9876
+{% endfor %}
+  labels:
+    role: StorageContainerManager
+    service: ozone
