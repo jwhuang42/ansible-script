@@ -2,40 +2,36 @@
 
 1. Prepare Ubuntu 22.04 for all VMs, and make sure ssh server is installed and enabled on all related machines
 
-   **Suggestion**: You may want to take a snapshot of each VM at this stage, so you can rollback the state and reinstall
-   everything if needed.
+   **Suggestion**: You may want to take a snapshot/image of each VM at this stage, so you can roll back the state and
+   reinstall
+   everything if needed. Ensure you have at least 10G free space in each VM.
 
 1. Make sure you are familiar with
    the [ssh concepts](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys).
 
 1. set ssh key based authentication\
-   **Note**: The assumption is the control machine can ssh to all controlled machine via password, if passwordless
-   access is already configured, just see if the `.ssh/config` need to modify.
+   **Note**: The assumption is the control machine can ssh to all controlled machine
 
-   - change directory `cd ~/.ssh`.
+    - on ansible control machine, change directory `cd ~/.ssh`.
    - on ansible control machine, run `ssh-keygen -t rsa -b 2048 -f <keyname>` to generate ssh key pair(without
      passphrase).
    - Check the generated public key: `cat ~/.ssh/<keyname>.pub`
-   - On each ansible controlled machine (i.e. also called ansible host), run the following command, replace
-     the `<pub_key_string>`
-     with real key:\
-     **Note**: you can
-     use [ssh-copy-id](https://www.digitalocean.com/community/tutorials/ssh-essentials-working-with-ssh-servers-clients-and-keys#copying-your-public-ssh-key-to-a-server-with-ssh-copy-id)
-     instead if you have password access to other VMs.
-     This guide assume you already have root access, and the public key is copied to the root directory of each
-     controlled machine.
-     Configure your accessibility first if needed.
-     ```
-     cat <<EOF >> ~/.ssh/authorized_keys
-     <pub_key_string>
-     EOF
-     ```
-   - If your key name or username is different from the default one (i.e. key name is not `id_rsa`
-     or the user on the control machine and the controlled machines are different), you may need to configure ssh
+    - On each controlled machine (i.e. also called ansible host), run the following command, replace
+      the `<pub_key_string>` with the actual public key fetched from previous step.\
+      **Note**:
+      This guide assumes you already have root access on each ansible host.
+      Configure your accessibility first if needed. \
+      First go to root directory: `sudo su -`; then
+      ```
+      cat <<EOF >> /root/.ssh/authorized_keys
+      <pub_key_string>
+      EOF
+      ```
+    - If your key name or username is different from the default one, you may want to configure ssh
      client on the control machine via a file at `~/.ssh/config` to access the controlled machines.
      Check [this link](https://www.digitalocean.com/community/tutorials/how-to-configure-custom-connection-options-for-your-ssh-client)
      for more detail.
-     A sample config on one of the nodes could look like:
+      A sample config on one of the nodes should look like below, with IP replaced with actual one:
      ```
      Host 192.168.62.141
        Hostname 192.168.62.141
@@ -43,6 +39,9 @@
        PreferredAuthentications publickey
        IdentityFile ~/.ssh/<keyname>
      ```
+   **Suggestion**: You may want to take a snapshot/image of each ansible host VM at this stage, so you can roll back the
+   state and reinstall
+   everything if needed.
 
 1. Setup ansible environment
 
@@ -86,11 +85,32 @@
 
 You can execute the single command `./deploy-all.sh` under the working directory to directly set up a hadoop HA cluster.
 
-The entire process may take around 30-45 min if you download the files online.
-Use local repo could accelerate the speed
-(Check vars in `book/install-hadoop.yaml` on where to put the downloaded binaries locally).
+The entire process may take around 30-90 min if you download the files online, depending on the network speed.
 
-It is highly recommended to check the `conf/hadoop` and `conf/zk` first and see if any modification is needed.
+Use local repo could accelerate the process and making sure all ansible host tar files are copied from the ones on the
+ansible control machine.
+Check `vars.local_repo` in `book/install-hadoop.yaml` on where to put the downloaded binaries locally; then use
+
+`wget -O <local_repo_path/filename_in_${vars.package_info.src} in the install-hadoop.yaml playbook> <${vars.package_info.link} in the install-hadoop.yaml playbook>`.
+
+to download tar files one by one.
+
+This script uses local repo mode as default copy mode, which means you should download and put the tar files to correct
+location first on the ansible control node.
+
+**Note**: To avoid surprise on local /etc/hosts setting, you can directly copy the below content to your /etc/hosts file
+on the ansible host machine, with IP replaced to actual ones:
+
+```
+# BEGIN ANSIBLE MANAGED HOSTNAME
+192.168.62.141 my.hadoop1 my.hbase1 my.ozone1 my.zk1
+192.168.62.142 my.hadoop2 my.hbase2 my.ozone2 my.zk2
+192.168.62.143 my.hadoop3 my.hbase3 my.ozone3 my.zk3
+192.168.62.144 my.hadoop4 my.hbase4 my.ozone4
+# END ANSIBLE MANAGED HOSTNAME
+```
+
+**Note**: It is highly recommended to check the `conf/hadoop` and `conf/zk` first and see if any modification is needed.
 
 ## Step-by-Step Deployment
 
