@@ -39,7 +39,7 @@
      ```
      Host 192.168.62.141
        Hostname 192.168.62.141
-       User admin
+       User root
        PreferredAuthentications publickey
        IdentityFile ~/.ssh/<keyname>
      ```
