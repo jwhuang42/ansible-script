@@ -28,10 +28,6 @@
       set_fact:
         first_nn_host: "{{ groups['namenodes'][0] }}"
 
-    - name: Format ZooKeeper Failover Controller
-      shell: ". /etc/profile && hdfs zkfc -formatZK"
-      when: inventory_hostname == first_nn_host
-
     - name: Start all journalnodes
       shell: ". /etc/profile && nohup hdfs --daemon start journalnode"
       when: inventory_hostname in groups['journalnodes']
@@ -75,6 +71,10 @@
       when:
         - inventory_hostname in groups['namenodes']
         - inventory_hostname != first_nn_host
+    
+    - name: Format ZooKeeper Failover Controller
+      shell: ". /etc/profile && hdfs zkfc -formatZK"
+      when: inventory_hostname == first_nn_host
 
     - name: Start datanode on datanodes
       shell: ". /etc/profile && nohup hdfs --daemon start datanode"

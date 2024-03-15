@@ -9,12 +9,14 @@
     hostnames: |
       {% for h in groups['nodes'] if hostvars[h].hostname is defined %}{{h}} {{ hostvars[h].hostname }}
       {% endfor %}
-
+    
   tasks:
 
     - name: test connectivity
       ping:
       connection: ssh
+      vars:
+        ansible_ssh_common_args: '-o PreferredAuthentications=publickey'
 
     - name: change local hostname
       become: true
@@ -79,4 +81,4 @@
         user: "{{ ansible_user }}"
         key: "{{ ssh_keys }}"
         state: present
-      connection: ssh
+      connection: ssh    

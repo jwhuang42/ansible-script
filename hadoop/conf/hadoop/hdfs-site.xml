@@ -30,21 +30,21 @@
     {% for host in groups['namenodes'] %}
     <property>
         <name>dfs.namenode.rpc-address.{{hdfs_name}}.{{hostvars[host]['id']}}</name>
-        <value>{{host}}:{{hostvars[host]['rpc_port']}}</value>
+        <value>{{hostvars[host]['p']}}:{{hostvars[host]['rpc_port']}}</value>
     </property>
     {% endfor %}
     <!-- NameNode HTTP 地址 -->
     {% for host in groups['namenodes'] %}
     <property>
         <name>dfs.namenode.http-address.{{hdfs_name}}.{{hostvars[host]['id']}}</name>
-        <value>{{host}}:{{hostvars[host]['http_port']}}</value>
+        <value>{{hostvars[host]['p']}}:{{hostvars[host]['http_port']}}</value>
     </property>
     {% endfor %}
     <!-- NameNode 元数据在 JournalNode 上的存放位置 -->
     <property>
         <name>dfs.namenode.shared.edits.dir</name>
-        <value>qjournal://{{groups['journalnodes'] | zip( groups['journalnodes']|map('extract',
-            hostvars)|map(attribute='journal_port') )| map('join', ':') | join(';') }}/{{hdfs_name}}
+        <value>qjournal://{{groups['journalnodes'] | map('extract', hostvars) | map(attribute='p') | zip( groups['journalnodes']| map('extract',
+            hostvars)| map(attribute='journal_port') )| map('join', ':') | join(';') }}/{{hdfs_name}}
         </value>
     </property>
     <!-- fail-over 代理类 (client 通过 proxy 来确定 Active NameNode) -->

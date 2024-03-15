@@ -11,6 +11,9 @@
 
     - name: test connectivity
       ping:
+      connection: ssh
+      vars:
+        ansible_ssh_common_args: '-o PreferredAuthentications=publickey'
 
     - name: Check if '{{ new_user }}' user exists
       command: 'id {{ new_user }}'
