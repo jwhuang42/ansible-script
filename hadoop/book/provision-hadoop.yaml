@@ -9,16 +9,16 @@
 
   tasks:
 
-    - name: Verify QuorumPeerMain process exist on each zk_node
-      block:
-        - name: Check for QuorumPeerMain process
-          shell: ". /etc/profile && jps | grep QuorumPeerMain"
-          register: quorum_check
-          failed_when: quorum_check.stdout == ""
-      rescue:
-        - name: Restart zkServer if QuorumPeerMain is not found
-          shell: ". /etc/profile && {{zk_home}}/bin/zkServer.sh restart && sleep 3"
-      when: inventory_hostname in groups['zk_nodes']
+    # - name: Verify QuorumPeerMain process exist on each zk_node
+    #   block:
+    #     - name: Check for QuorumPeerMain process
+    #       shell: ". /etc/profile && jps | grep QuorumPeerMain"
+    #       register: quorum_check
+    #       failed_when: quorum_check.stdout == ""
+    #   rescue:
+    #     - name: Restart zkServer if QuorumPeerMain is not found
+    #       shell: ". /etc/profile && {{zk_home}}/bin/zkServer.sh restart && sleep 3"
+    #   when: inventory_hostname in groups['zk_nodes']
 
     - name: Get ZooKeeper version and status
       shell: ". /etc/profile && {{zk_home}}/bin/zkServer.sh version && {{zk_home}}/bin/zkServer.sh status"
@@ -72,8 +72,9 @@
         - inventory_hostname in groups['namenodes']
         - inventory_hostname != first_nn_host
     
+    # add echo and no-hangup
     - name: Format ZooKeeper Failover Controller
-      shell: ". /etc/profile && hdfs zkfc -formatZK"
+      shell: ". /etc/profile && echo Y | nohup hdfs zkfc -formatZK"
       when: inventory_hostname == first_nn_host
 
     - name: Start datanode on datanodes

@@ -18,13 +18,15 @@
       vars:
         ansible_ssh_common_args: '-o PreferredAuthentications=publickey'
 
-    - name: change local hostname
-      become: true
-      blockinfile:
-        dest: '/etc/hosts'
-        marker: "# {mark} ANSIBLE MANAGED HOSTNAME"
-        block: '{{ hostnames }}'
-      run_once: true
+    # !!!! Permission issue, use manual addition instead !!!!
+
+    # - name: change local hostname
+    #   become: true
+    #   blockinfile:
+    #     dest: '/etc/hosts'
+    #     marker: "# {mark} ANSIBLE MANAGED HOSTNAME"
+    #     block: '{{ hostnames }}'
+    #   run_once: true
 
     - name: sync remote hostname
       become: true

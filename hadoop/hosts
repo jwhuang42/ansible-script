@@ -1,25 +1,25 @@
 [newborn]
-34.16.143.43
-34.125.37.226
-34.125.40.89
-34.16.189.36
+10.147.19.83
+10.147.19.103
+10.147.19.228
+10.147.19.206
 
 [ozone_newborn]
-34.16.143.43
-34.125.37.226
-34.125.40.89
-34.16.189.36
+10.147.19.83
+10.147.19.103
+10.147.19.228
+10.147.19.206
 
 [nodes]
-34.16.143.43 hostname='my.hadoop1 my.hbase1 my.ozone1 my.zk1'
-34.125.37.226 hostname='my.hadoop2 my.hbase2 my.ozone2 my.zk2'
-34.125.40.89 hostname='my.hadoop3 my.hbase3 my.ozone3 my.zk3'
-34.16.189.36 hostname='my.hadoop4 my.hbase4 my.ozone4'
+10.147.19.83 hostname='my.hadoop1 my.hbase1 my.ozone1 my.zk1'
+10.147.19.103 hostname='my.hadoop2 my.hbase2 my.ozone2 my.zk2'
+10.147.19.228 hostname='my.hadoop3 my.hbase3 my.ozone3 my.zk3'
+10.147.19.206 hostname='my.hadoop4 my.hbase4 my.ozone4'
 
 [zk_nodes]
-my.zk1 ansible_host=34.16.143.43 p=10.182.0.10 myid=1
-my.zk2 ansible_host=34.125.37.226 p=10.182.0.11 myid=2
-my.zk3 ansible_host=34.125.40.89 p=10.182.0.12 myid=3
+my.zk1 ansible_host=10.147.19.83 p=10.147.19.83 myid=1
+my.zk2 ansible_host=10.147.19.103 p=10.147.19.103 myid=2
+my.zk3 ansible_host=10.147.19.228 p=10.147.19.228 myid=3
 
 [hadoop_nodes]
 my.hadoop[1:4] ansible_ssh_private_key_file=/Users/ccheng/Documents/WRDS/wrds
@@ -50,16 +50,16 @@ my.ozone4
 my.ozone[1:4]
 
 [namenodes]
-my.hadoop1 p=10.182.0.10 id=nn1 rpc_port=8020 http_port=9870
-my.hadoop2 p=10.182.0.11 id=nn2 rpc_port=8020 http_port=9870
+my.hadoop1 p=10.147.19.83 id=nn1 rpc_port=8020 http_port=9870
+my.hadoop2 p=10.147.19.103 id=nn2 rpc_port=8020 http_port=9870
 
 [datanodes]
 my.hadoop[1:4]
 
 [journalnodes]
-my.hadoop1 p=10.182.0.10 journal_port=8485
-my.hadoop2 p=10.182.0.11 journal_port=8485
-my.hadoop3 p=34.125.40.89 journal_port=8485
+my.hadoop1 p=10.147.19.83 journal_port=8485
+my.hadoop2 p=10.147.19.103 journal_port=8485
+my.hadoop3 p=10.147.19.228 journal_port=8485
 
 [resourcemanagers]
 my.hadoop3 id=rm1 peer_port=8032 tracker_port=8031 scheduler_port=8030 web_port=8088
@@ -75,8 +75,8 @@ my.hbase[1:2]
 my.hbase[1:4]
 
 [prometheus]
-34.16.143.43 replicaid=0
-34.125.37.226 replicaid=1
+10.147.19.83 replicaid=0
+10.147.19.103 replicaid=1
 
 [all:vars]
 ansible_user=admin

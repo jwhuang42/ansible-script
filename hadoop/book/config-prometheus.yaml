@@ -1,6 +1,7 @@
 ---
 - name: Install and configure Prometheus monitoring on the cluster
   hosts: prometheus
+  become: yes # run with elevated privileges
   gather_facts: no
   any_errors_fatal: true
 

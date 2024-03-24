@@ -39,9 +39,10 @@
         src: '{{ template_dir }}/zoo.cfg'
         dest: '{{ zk_home }}/conf'
 
+    # ignore the hangup
     - name: Restart zookeeper service
       shell:
-        cmd: '{{ zk_home }}/bin/zkServer.sh restart && sleep 3'
+        cmd: 'nohup {{ zk_home }}/bin/zkServer.sh restart'
 
     - name: Get zookeeper status
       shell:
