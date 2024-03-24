@@ -5,7 +5,7 @@
   any_errors_fatal: true
 
   vars:
-    install_from_remote: false
+    install_from_remote: true
     local_repo: '../repo/monitoring'
     remote_repo: '~/repo/monitoring'
 

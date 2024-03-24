@@ -16,6 +16,7 @@
       ping:
       connection: ssh
 
+    # Note: There's a permission issue left unfixed, check deployment guide and manually add this locally first.
     - name: change local hostname
       become: true
       blockinfile:

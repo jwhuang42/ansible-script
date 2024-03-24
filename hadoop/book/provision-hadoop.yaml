@@ -17,7 +17,7 @@
           failed_when: quorum_check.stdout == ""
       rescue:
         - name: Restart zkServer if QuorumPeerMain is not found
-          shell: ". /etc/profile && {{zk_home}}/bin/zkServer.sh restart && sleep 3"
+          shell: ". /etc/profile && nohup {{zk_home}}/bin/zkServer.sh restart"
       when: inventory_hostname in groups['zk_nodes']
 
     - name: Get ZooKeeper version and status
@@ -29,7 +29,7 @@
         first_nn_host: "{{ groups['namenodes'][0] }}"
 
     - name: Format ZooKeeper Failover Controller
-      shell: ". /etc/profile && hdfs zkfc -formatZK"
+      shell: ". /etc/profile && echo Y | nohup hdfs zkfc -formatZK"
       when: inventory_hostname == first_nn_host
 
     - name: Start all journalnodes

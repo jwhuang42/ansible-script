@@ -13,7 +13,7 @@
    **Note**: The assumption is the control machine can ssh to all controlled machine
 
     - on ansible control machine, change directory `cd ~/.ssh`.
-   - on ansible control machine, run `ssh-keygen -t rsa -b 2048 -f <keyname>` to generate ssh key pair(without
+   - on ansible control machine, run `ssh-keygen -t ecdsa -b 521 -f <keyname>` to generate ssh key pair(without
      passphrase).
    - Check the generated public key: `cat ~/.ssh/<keyname>.pub`
     - On each controlled machine (i.e. also called ansible host), run the following command, replace
@@ -50,7 +50,7 @@
    But first, change directory to the ansible project(the location of this .md file) and configure the `hosts` ansible
    file.
 
-   **Option 1** Docker
+   **Option 1** Docker(Has minor issues)
 
     1. Change directory to ansible project hadoop directory `ansible-script/hadoop` (the location of this .md file) on
        the host machine.\
@@ -72,7 +72,7 @@
    - Update the `ansible_ssh_private_key_file` under the `[hadoop_nodes]` section (points to the same IdentityFile in
      the .ssh/config).
 
-   **Option 2** Local Machine
+   **Option 2** Local Machine (Preferred)
 
     1. Makes sure python 3.10 and ansible 8.7.0 are installed before proceed. You can check the `Dockerfile` in the
        parent
