@@ -5,7 +5,8 @@
   any_errors_fatal: true
 
   vars:
-    install_from_remote: false
+    install_from_remote: true
+    local_repo_all: '../repo'
     local_repo: '../repo/ozone'
     remote_repo: '~/repo/ozone'
     # NOTE: Change the `src` below to correct package in `local_repo` if install via local package.
@@ -28,7 +29,7 @@
 
         - name: Copy the download script to the remote machine
           copy:
-            src: '{{ local_repo }}/download_util.sh'
+            src: '{{ local_repo_all }}/download_util.sh'
             dest: /tmp/download_util.sh
             mode: '0755'
           when: install_from_remote
