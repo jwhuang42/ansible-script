@@ -25,47 +25,57 @@
       set_fact:
         first_scm_node: "{{ groups['scms'][0] }}"
 
-    - name: Check if the first scm is initialized
-      stat:
-        path: "{{ozone_metadata_dir}}/scm/current/VERSION"
-      register: scm_init_check
+    - name: Check if SCM is already running
+      shell: ". /etc/profile && jps | grep -q StorageContainerManagerStarter"
+      ignore_errors: true
+      register: scm_running_check
 
-    - name: init first scm if not initialized
-      shell: ". /etc/profile && nohup ozone scm --init"
-      when:
-        - inventory_hostname == first_scm_node
-        - not scm_init_check.stat.exists
+    - block:
 
-    - name: start first scm
-      shell: ". /etc/profile && nohup ozone --daemon start scm"
-      when: inventory_hostname == first_scm_node
+      - name: Check if the first scm is initialized
+        stat:
+          path: "{{ozone_metadata_dir}}/scm/current/VERSION"
+        register: scm_init_check
 
-    - name: Set a variable for the length of the 'scms' group
-      set_fact:
-        scms_length: "{{ groups['scms'] | length }}"
+      - name: init first scm if not initialized
+        shell: ". /etc/profile && nohup ozone scm --init"
+        when:
+          - inventory_hostname == first_scm_node
+          - not scm_init_check.stat.exists
 
-    - name: Sequentially bootstrap other SCMs
-      include_tasks: bootstrap-scm.yaml
-      loop: "{{ range(1, scms_length|int) }}"
-      loop_control:
-        index_var: item
-      when: scms_length|int >= 2
+      - name: start first scm
+        shell: ". /etc/profile && nohup ozone --daemon start scm"
+        when:
+          - inventory_hostname == first_scm_node
 
-    - name: Wait for the SCM "{{ groups['scms'][-1] }}" ratis port to become available
-      wait_for:
-        host: "{{ groups['scms'][-1] }}"
-        port: 9894
-        timeout: 90
-      when:
-        - inventory_hostname == groups['scms'][-1]
-        - scms_length|int >= 2
+      - name: Set a variable for the length of the 'scms' group
+        set_fact:
+          scms_length: "{{ groups['scms'] | length }}"
 
-    - name: Check StorageContainerManagerStarter process exist on the scms group
-      shell: ". /etc/profile && jps | grep StorageContainerManagerStarter"
-      register: scm_check
-      failed_when: scm_check.stdout == ""
-      when:
-        - inventory_hostname in groups['scms']
+      - name: Sequentially bootstrap other SCMs
+        include_tasks: bootstrap-scm.yaml
+        loop: "{{ range(1, scms_length|int) }}"
+        loop_control:
+          index_var: item
+        when: scms_length|int >= 2
+
+      - name: Wait for the SCM "{{ groups['scms'][-1] }}" ratis port to become available
+        wait_for:
+          host: "{{ groups['scms'][-1] }}"
+          port: 9894
+          timeout: 90
+        when:
+          - inventory_hostname == groups['scms'][-1]
+          - scms_length|int >= 2
+
+      - name: Check StorageContainerManagerStarter process exist on the scms group
+        shell: ". /etc/profile && jps | grep StorageContainerManagerStarter"
+        register: scm_check
+        failed_when: scm_check.stdout == ""
+        when:
+          - inventory_hostname in groups['scms']
+
+      when: scm_running_check.rc != 0
 
     - name: Check if the om has already initialized
       stat:
