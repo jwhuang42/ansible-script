@@ -6,6 +6,7 @@
 
   vars:
     install_from_remote: true
+    local_repo_all: '../repo'
     local_repo: '../repo/monitoring'
     remote_repo: '~/repo/monitoring'
 
@@ -15,7 +16,7 @@
   tasks:
     - name: Check if Prometheus is already installed
       stat:
-        path: "{{ deploy_dir }}/prometheus"
+        path: "{{ deploy_dir }}/monitoring/prometheus-2.50.1.linux-amd64"
       register: prometheus_installed
 
     - block:
@@ -32,7 +33,7 @@
 
           - name: Copy the download script to the remote machine
             copy:
-              src: '../repo/download_util.sh'
+              src: '{{ local_repo_all }}/download_util.sh'
               dest: /tmp/download_util.sh
               mode: '0755'
             when: install_from_remote
@@ -72,4 +73,13 @@
             - --strip-components=1
         with_items: '{{ package_info }}'
 
-      when: not prometheus_installed
+      - name: Configure Prometheus Environment
+        become: true
+        blockinfile:
+          dest: '/etc/profile'
+          marker: "# {mark} ANSIBLE MANAGED PROMETHEUS ENV"
+          block: |
+            export PROMETHEUS_HOME={{ deploy_dir }}/prometheus
+            export PATH=$PROMETHEUS_HOME:$PATH
+
+      when: not prometheus_installed.stat.exists

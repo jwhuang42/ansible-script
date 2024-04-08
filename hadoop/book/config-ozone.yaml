@@ -55,3 +55,23 @@
         - core-site.xml
         - ozone-site.xml
         - workers
+
+    - name: Install UFW (Uncomplicated Firewall) if not already installed
+      become: true
+      apt:
+        name: ufw
+        state: present
+
+    - name: Enable UFW
+      become: true
+      command: ufw --force enable
+      args:
+        creates: /lib/systemd/system/ufw.service
+
+    - name: Allow traffic from ZeroTier network to Ozone Manager
+      become: true
+      community.general.ufw:
+        rule: allow
+        from_ip: '{{ network_range }}'
+        to_port: 9874
+        proto: tcp
