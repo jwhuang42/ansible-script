@@ -46,6 +46,7 @@
         marker: "# {mark} ANSIBLE MANAGED HBASE ENV"
         block: |
           export HBASE_LOG_DIR={{ hbase_log_dir }}
+          export HBASE_DISABLE_HADOOP_CLASSPATH_LOOKUP=true
 
           export HBASE_OPTS="-Xss256k -XX:+UseShenandoahGC -XX:+AlwaysPreTouch $HBASE_OPTS"
           export HBASE_MASTER_OPTS="$HBASE_MASTER_OPTS -Xlog:gc:{{hbase_gc_log_dir}}/gc-hmaster-%p-%t.log"

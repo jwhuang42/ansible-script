@@ -9,18 +9,18 @@
   any_errors_fatal: true
 
   vars:
-    install_from_remote: false
-    install_hbase: false
+    install_from_remote: true
+    install_hbase: true
     local_repo: '../repo/hadoop'
     remote_repo: '~/repo/hadoop'
     # NOTE: Change the `src` below to correct package in `local_repo` if install via local package.
     package_info:
-      - {src: 'openlogic-openjdk-17.0.9+9-linux-x64.tar.gz', dst: 'java/jdk-17.0.9+9', home: 'jdk17', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/17.0.9+9/openlogic-openjdk-17.0.9+9-linux-x64.tar.gz'}
-      - {src: 'openlogic-openjdk-8u392-b08-linux-x64.tar.gz', dst: 'java/jdk8u392-b08', home: 'jdk8', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/8u392-b08/openlogic-openjdk-8u392-b08-linux-x64.tar.gz'}
-      - {src: 'apache-zookeeper-3.8.3-bin.tar.gz', dst: 'apache/zookeeper-3.8.3', home: 'zookeeper', link: 'https://archive.apache.org/dist/zookeeper/zookeeper-3.8.3/apache-zookeeper-3.8.3-bin.tar.gz'}
-      - {src: 'hbase-2.5.10-bin.tar.gz', dst: 'apache/hbase-2.5.10',home: 'hbase', link: 'https://archive.apache.org/dist/hbase/2.5.10/hbase-2.5.10-bin.tar.gz'}
-      - {src: 'hadoop-3.3.6.tar.gz', dst: 'apache/hadoop-3.3.6', home: 'hadoop', link: 'https://archive.apache.org/dist/hadoop/core/hadoop-3.3.6/hadoop-3.3.6.tar.gz'}
-      - {src: 'spark-3.4.4-bin-hadoop3.tgz', dst: 'apache/spark-3.4.4', home: 'spark', link: 'https://archive.apache.org/dist/spark/spark-3.4.4/spark-3.4.4-bin-hadoop3.tgz'}
+      - {src: 'openlogic-openjdk-17.0.14+7-linux-x64.tar.gz', dst: 'java/jdk-17.0.14+7', home: 'jdk17', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/17.0.14+7/openlogic-openjdk-17.0.14+7-linux-x64.tar.gz'}
+      - {src: 'openlogic-openjdk-8u442-b06-linux-x64.tar.gz', dst: 'java/jdk8u442-b06', home: 'jdk8', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/8u442-b06/openlogic-openjdk-8u442-b06-linux-x64.tar.gz'}
+      - {src: 'apache-zookeeper-3.8.4-bin.tar.gz', dst: 'apache/zookeeper-3.8.4', home: 'zookeeper', link: 'https://dlcdn.apache.org/zookeeper/zookeeper-3.8.4/apache-zookeeper-3.8.4-bin.tar.gz'}
+      - {src: 'hbase-2.6.1-bin.tar.gz', dst: 'apache/hbase-2.6.1',home: 'hbase', link: 'https://dlcdn.apache.org/hbase/2.6.1/hbase-2.6.1-bin.tar.gz'}
+      - {src: 'hadoop-3.4.1.tar.gz', dst: 'apache/hadoop-3.4.1', home: 'hadoop', link: 'https://dlcdn.apache.org/hadoop/common/hadoop-3.4.1/hadoop-3.4.1.tar.gz'}
+      - {src: 'spark-3.4.4-bin-without-hadoop.tgz', dst: 'apache/spark-3.4.4', home: 'spark', link: 'https://dlcdn.apache.org/spark/spark-3.4.4/spark-3.4.4-bin-without-hadoop.tgz'}
 
   tasks:
 
@@ -189,6 +189,8 @@
           - liblz4-dev
           - libzstd1
           - libzstd-dev
+          - libisal2
+          - libssl-dev
         state: present
       when: ansible_distribution == "Ubuntu"
 
@@ -197,7 +199,6 @@
       register: hadoop_checknative
       failed_when: false
       changed_when: false
-      ignore_errors: yes
       environment:
         JAVA_HOME: '{{ deploy_dir }}/jdk8'
 
@@ -206,11 +207,10 @@
         msg: "{{ hadoop_checknative.stdout_lines }}"
 
     - name: check hbase native
-      shell: '{{ deploy_dir }}/hbase/bin/hbase --config ~/conf_hbase org.apache.hadoop.util.NativeLibraryChecker'
+      shell: '{{ deploy_dir }}/hbase/bin/hbase --config {{ deploy_dir }}/hbase/conf org.apache.hadoop.util.NativeLibraryChecker'
       register: hbase_checknative
       failed_when: false
       changed_when: false
-      ignore_errors: yes
       environment:
         JAVA_HOME: '{{ deploy_dir }}/jdk17'
         HBASE_LIBRARY_PATH: '{{ deploy_dir }}/hadoop/lib/native'
@@ -227,7 +227,6 @@
       register: 'compression'
       failed_when: false
       changed_when: false
-      ignore_errors: yes
       environment:
         JAVA_HOME: '{{ deploy_dir }}/jdk17'
         HBASE_LIBRARY_PATH: '{{ deploy_dir }}/hadoop/lib/native'

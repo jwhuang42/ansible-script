@@ -157,6 +157,11 @@
       shell: ". /etc/profile && nohup mapred --daemon start historyserver"
       when: inventory_hostname == first_rm_host
 
+      # TODO: This command may not successfully start the Spark history server - needs investigation
+      # Potential issues could include:
+      # - Path to start-history-server.sh not in PATH
+      # - Configuration issues in spark-defaults.conf
+      # - Missing environment variables
     - name: Start Spark history server on the first resource manager node
       shell: ". /etc/profile && start-history-server.sh"
       when: inventory_hostname == first_rm_host

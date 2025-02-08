@@ -34,12 +34,12 @@ ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=admin -vv
 check_failure
 wait_for_input
 
-echo "################################"
-echo "     Set up prometheus user     "
-echo "################################"
-ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=prometheus -vv
-check_failure
-wait_for_input
+# echo "################################"
+# echo "     Set up prometheus user     "
+# echo "################################"
+# ansible-playbook book/setup-user.yaml -e ansible_user=root -e new_user=prometheus -vv
+# check_failure
+# wait_for_input
 
 echo "################################"
 echo "     Sync Hadoop ssh keys       "
@@ -55,12 +55,12 @@ ansible-playbook book/install-hadoop.yaml -vv
 check_failure
 wait_for_input
 
-echo "################################"
-echo "        Install Prometheus      "
-echo "################################"
-ansible-playbook book/install-prometheus.yaml -e ansible_user=prometheus -vv
-check_failure
-wait_for_input
+# echo "################################"
+# echo "        Install Prometheus      "
+# echo "################################"
+# ansible-playbook book/install-prometheus.yaml -e ansible_user=prometheus -vv
+# check_failure
+# wait_for_input
 
 echo "################################"
 echo "  Configure and start Zookeeper "
@@ -77,11 +77,19 @@ check_failure
 wait_for_input
 
 echo "################################"
-echo "     Configure metrics export   "
+echo "        Configure HBase         "
 echo "################################"
-ansible-playbook book/config-metrics.yaml -vv
+ansible-playbook book/config-hbase.yaml -vv
 check_failure
 wait_for_input
+
+
+# echo "################################"
+# echo "     Configure metrics export   "
+# echo "################################"
+# ansible-playbook book/config-metrics.yaml -vv
+# check_failure
+# wait_for_input
 
 echo "######################################"
 echo "Initialize and start the HDFS and YARN"
@@ -90,8 +98,11 @@ ansible-playbook book/provision-hadoop.yaml -vv
 check_failure
 wait_for_input
 
-echo "################################"
-echo "      Configure prometheus      "
-echo "################################"
-ansible-playbook book/config-prometheus.yaml -e ansible_user=prometheus -e monitoring_cluster=hadoop -vv
-check_failure
+# echo "################################"
+# echo "      Configure prometheus      "
+# echo "################################"
+# ansible-playbook book/config-prometheus.yaml -e ansible_user=prometheus -e monitoring_cluster=hadoop -vv
+# check_failure
+
+ansible 'hmasters[0]' -m shell -a '. /etc/profile && nohup start-hbase.sh' -vv
+ansible 'hbase_nodes' -m shell -a ". /etc/profile && nohup hbase thrift start -threadpool &" --become
