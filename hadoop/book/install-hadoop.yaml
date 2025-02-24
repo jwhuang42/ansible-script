@@ -18,7 +18,7 @@
       - {src: 'openlogic-openjdk-17.0.14+7-linux-x64.tar.gz', dst: 'java/jdk-17.0.14+7', home: 'jdk17', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/17.0.14+7/openlogic-openjdk-17.0.14+7-linux-x64.tar.gz'}
       - {src: 'openlogic-openjdk-8u442-b06-linux-x64.tar.gz', dst: 'java/jdk8u442-b06', home: 'jdk8', link: 'https://builds.openlogic.com/downloadJDK/openlogic-openjdk/8u442-b06/openlogic-openjdk-8u442-b06-linux-x64.tar.gz'}
       - {src: 'apache-zookeeper-3.8.4-bin.tar.gz', dst: 'apache/zookeeper-3.8.4', home: 'zookeeper', link: 'https://dlcdn.apache.org/zookeeper/zookeeper-3.8.4/apache-zookeeper-3.8.4-bin.tar.gz'}
-      - {src: 'hbase-2.6.1-bin.tar.gz', dst: 'apache/hbase-2.6.1',home: 'hbase', link: 'https://dlcdn.apache.org/hbase/2.6.1/hbase-2.6.1-bin.tar.gz'}
+      - {src: 'hbase-2.6.2-hadoop3-bin.tar.gz', dst: 'apache/hbase-2.6.2',home: 'hbase', link: 'https://dlcdn.apache.org/hbase/2.6.2/hbase-2.6.2-hadoop3-bin.tar.gz'}
       - {src: 'hadoop-3.4.1.tar.gz', dst: 'apache/hadoop-3.4.1', home: 'hadoop', link: 'https://dlcdn.apache.org/hadoop/common/hadoop-3.4.1/hadoop-3.4.1.tar.gz'}
       - {src: 'spark-3.4.4-bin-without-hadoop.tgz', dst: 'apache/spark-3.4.4', home: 'spark', link: 'https://dlcdn.apache.org/spark/spark-3.4.4/spark-3.4.4-bin-without-hadoop.tgz'}
 
